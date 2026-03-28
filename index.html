@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RailAlert — Global Railway Accident Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #17171f;
+      --border: #2a2a38;
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --accent: #ff3b3b;
+      --accent2: #ff7a3b;
+      --yellow: #f5c518;
+      --green: #22c55e;
+      --catastrophic: #ff1a1a;
+      --severe: #ff6b35;
+      --moderate: #f59e0b;
+      --minor: #3b82f6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: rgba(10,10,15,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; text-decoration: none; color: var(--text); }
+    .logo-icon { width: 30px; height: 30px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .logo span { color: var(--accent); }
+    nav { display: flex; gap: 4px; align-items: center; }
+    nav button { background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; padding: 6px 14px; border-radius: 6px; transition: all 0.2s; }
+    nav button:hover, nav button.active { color: var(--text); background: var(--surface2); }
+    .btn-report { background: var(--accent) !important; color: white !important; font-weight: 500; }
+    .btn-report:hover { background: #e02020 !important; }
+
+    .app-layout { display: flex; height: 100vh; padding-top: 56px; }
+
+    .sidebar { width: 340px; min-width: 340px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; z-index: 100; }
+    .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+    .search-box { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+    .search-box input { background: none; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; flex: 1; }
+    .search-box input::placeholder { color: var(--muted); }
+    .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-chip { padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-chip.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    .stats-bar { padding: 12px 16px; display: flex; gap: 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .stat-item { flex: 1; text-align: center; }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .view-tabs { display: flex; padding: 8px 8px 4px; gap: 0; }
+    .view-tab { flex: 1; padding: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; }
+    .view-tab:first-child { border-radius: 6px 0 0 6px; }
+    .view-tab:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+    .view-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    .incidents-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .incidents-list::-webkit-scrollbar { width: 4px; }
+    .incidents-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .incident-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+    .incident-card:hover { border-color: var(--accent); transform: translateX(2px); }
+    .incident-card.selected { border-color: var(--accent); background: rgba(255,59,59,0.06); }
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; line-height: 1.3; }
+    .severity-badge { font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .badge-catastrophic { background: rgba(255,26,26,0.2); color: var(--catastrophic); border: 1px solid rgba(255,26,26,0.3); }
+    .badge-severe { background: rgba(255,107,53,0.2); color: var(--severe); border: 1px solid rgba(255,107,53,0.3); }
+    .badge-moderate { background: rgba(245,158,11,0.2); color: var(--moderate); border: 1px solid rgba(245,158,11,0.3); }
+    .badge-minor { background: rgba(59,130,246,0.2); color: var(--minor); border: 1px solid rgba(59,130,246,0.3); }
+    .card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .card-loc { font-size: 11px; color: var(--muted); }
+    .card-date { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+    .card-casualties { display: flex; gap: 8px; margin-top: 6px; }
+    .cas-item { font-family: 'DM Mono', monospace; font-size: 10px; display: flex; align-items: center; gap: 3px; }
+    .cas-item.deaths { color: var(--catastrophic); }
+    .cas-item.injuries { color: var(--severe); }
+
+    .map-container { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; background: #0d0d18; }
+
+    .map-overlay { position: absolute; top: 12px; right: 12px; z-index: 500; }
+    .map-legend { background: rgba(10,10,15,0.9); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; min-width: 150px; }
+    .legend-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 11px; color: var(--text); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .live-dot { display: inline-block; width: 7px; height: 7px; background: var(--accent); border-radius: 50%; margin-right: 5px; animation: blink 1.5s ease-in-out infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .detail-panel { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%); width: min(500px, calc(100vw - 380px)); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; z-index: 600; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 24px 64px rgba(0,0,0,0.6); }
+    .detail-panel.open { transform: translateX(-50%) translateY(0); }
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .detail-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; line-height: 1.2; }
+    .detail-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; padding: 4px 8px; font-size: 16px; transition: all 0.15s; flex-shrink: 0; }
+    .detail-close:hover { color: var(--text); }
+    .detail-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .type-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; }
+    .detail-desc { font-size: 13px; line-height: 1.6; color: rgba(232,232,240,0.8); margin-bottom: 14px; }
+    .detail-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .d-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+    .d-stat-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+    .d-stat-val.red { color: var(--catastrophic); }
+    .d-stat-val.orange { color: var(--severe); }
+    .d-stat-val.blue { color: var(--minor); font-size: 14px; font-weight: 700; }
+    .d-stat-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+    .detail-footer { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .detail-loc { font-size: 12px; color: var(--muted); flex: 1; }
+    .source-link { font-size: 12px; color: var(--accent); text-decoration: none; font-family: 'DM Mono', monospace; }
+    .source-link:hover { text-decoration: underline; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: min(560px, 95vw); max-height: 90vh; overflow-y: auto; padding: 28px; }
+    .modal-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .form-input, .form-select, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px 12px; outline: none; transition: border-color 0.2s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-select option { background: var(--surface2); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .geo-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+    .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { color: var(--text); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #e02020; }
+
+    .loading-state { display: flex; align-items: center; justify-content: center; padding: 40px; flex-direction: column; gap: 12px; color: var(--muted); font-size: 13px; }
+    .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .custom-marker { border: none; background: none; }
+    .marker-dot { border-radius: 50%; cursor: pointer; transition: transform 0.15s; }
+    .marker-pulse { animation: mpulse 2s infinite; }
+    @keyframes mpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 13px; z-index: 3000; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--green); }
+    .toast.error { border-color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .detail-panel { width: calc(100vw - 20px); left: 10px; transform: translateY(120%); bottom: 10px; }
+      .detail-panel.open { transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">🚂</div>
+    Rail<span>Alert</span>
+  </a>
+  <nav>
+    <button class="active">Map</button>
+    <button class="btn-report" onclick="openModal()">+ Report Incident</button>
+  </nav>
+</header>
+
+<div class="app-layout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Search incidents..." oninput="handleSearch(this.value)" />
+      </div>
+      <div class="filters">
+        <button class="filter-chip active" onclick="setFilter('severity', '')" data-fs="">All</button>
+        <button class="filter-chip" onclick="setFilter('severity', 'catastrophic')" data-fs="catastrophic">☠ Catastrophic</button>
+        <button class="filter-chip" onclick="setFilter('severity', 'severe')" data-fs="severe">⚠ Severe</button>
+        <button class="filter-chip" onclick="setFilter('severity', 'moderate')" data-fs="moderate">◈ Moderate</button>
+        <button class="filter-chip" onclick="setFilter('severity', 'minor')" data-fs="minor">◇ Minor</button>
+      </div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-val" id="statTotal">—</div><div class="stat-label">Incidents</div></div>
+      <div class="stat-item"><div class="stat-val" id="statCas">—</div><div class="stat-label">Casualties</div></div>
+      <div class="stat-item"><div class="stat-val" id="statInj">—</div><div class="stat-label">Injuries</div></div>
+    </div>
+
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabAll" onclick="setTypeFilter('')">All</button>
+      <button class="view-tab" id="tabDerail" onclick="setTypeFilter('derailment')">Derailments</button>
+      <button class="view-tab" id="tabCollision" onclick="setTypeFilter('collision')">Collisions</button>
+    </div>
+
+    <div class="incidents-list" id="incidentsList">
+      <div class="loading-state"><div class="spinner"></div><span>Loading incidents...</span></div>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <div id="map"></div>
+
+    <div class="map-overlay">
+      <div class="map-legend">
+        <div class="legend-title"><span class="live-dot"></span>Severity</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--catastrophic)"></div>Catastrophic</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--severe)"></div>Severe</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--moderate)"></div>Moderate</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--minor)"></div>Minor</div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <div class="detail-title" id="detailTitle"></div>
+        <button class="detail-close" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-badges" id="detailBadges"></div>
+      <div class="detail-desc" id="detailDesc"></div>
+      <div class="detail-stats" id="detailStats"></div>
+      <div class="detail-footer" id="detailFooter"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Report an Incident</div>
+    <div class="modal-sub">Submit a railway accident for inclusion on the map.</div>
+    <div class="form-group"><label class="form-label">Incident Title *</label><input class="form-input" id="fTitle" placeholder="e.g. XYZ Express Derailment" /></div>
+    <div class="form-group"><label class="form-label">Description *</label><textarea class="form-textarea" id="fDesc" placeholder="Describe what happened..."></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Location *</label><input class="form-input" id="fLocation" placeholder="City, Region" /></div>
+      <div class="form-group"><label class="form-label">Country *</label><input class="form-input" id="fCountry" placeholder="Country name" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Latitude *</label><input class="form-input" id="fLat" type="number" step="0.0001" placeholder="e.g. 40.7128" /></div>
+      <div class="form-group"><label class="form-label">Longitude *</label><input class="form-input" id="fLng" type="number" step="0.0001" placeholder="e.g. -74.0060" /></div>
+    </div>
+    <div class="geo-hint">💡 Right-click any spot on Google Maps → "What's here?" to get coordinates</div>
+    <div class="form-row" style="margin-top:16px">
+      <div class="form-group"><label class="form-label">Date *</label><input class="form-input" id="fDate" type="date" /></div>
+      <div class="form-group"><label class="form-label">Severity *</label>
+        <select class="form-select" id="fSeverity">
+          <option value="">Select severity</option>
+          <option value="minor">Minor</option>
+          <option value="moderate">Moderate</option>
+          <option value="severe">Severe</option>
+          <option value="catastrophic">Catastrophic</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Type</label>
+        <select class="form-select" id="fType">
+          <option value="derailment">Derailment</option>
+          <option value="collision">Collision</option>
+          <option value="fire">Fire</option>
+          <option value="bridge_failure">Bridge Failure</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Fatalities</label><input class="form-input" id="fCasualties" type="number" min="0" placeholder="0" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Injuries</label><input class="form-input" id="fInjuries" type="number" min="0" placeholder="0" /></div>
+      <div class="form-group"><label class="form-label">Source URL</label><input class="form-input" id="fSource" placeholder="https://..." /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/api';
+  let map, markers = [], allData = [], selectedId = null;
+  let filters = { severity: '', type: '', search: '' };
+
+  const COLORS = { catastrophic: '#ff1a1a', severe: '#ff6b35', moderate: '#f59e0b', minor: '#3b82f6' };
+  const SIZES  = { catastrophic: 18, severe: 14, moderate: 11, minor: 8 };
+
+  function initMap() {
+    map = L.map('map', { center: [20, 10], zoom: 2.5, zoomControl: false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
+    }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+  }
+
+  async function loadData() {
+    try {
+      const params = new URLSearchParams();
+      if (filters.severity) params.append('severity', filters.severity);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.search) params.append('search', filters.search);
+      const res = await fetch(`${API}/accidents?${params}`);
+      const json = await res.json();
+      allData = json.data || [];
+      renderSidebar(allData);
+      renderMarkers(allData);
+    } catch(e) {
+      document.getElementById('incidentsList').innerHTML = '<div class="loading-state">⚠ Could not load data. Check your Supabase env vars.</div>';
+    }
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API}/stats`);
+      const json = await res.json();
+      const d = json.data;
+      document.getElementById('statTotal').textContent = d.totalAccidents;
+      document.getElementById('statCas').textContent = d.totalCasualties.toLocaleString();
+      document.getElementById('statInj').textContent = d.totalInjuries.toLocaleString();
+    } catch(e) {}
+  }
+
+  function renderMarkers(data) {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    data.forEach(acc => {
+      const color = COLORS[acc.severity] || '#888';
+      const size = SIZES[acc.severity] || 10;
+      const isRecent = new Date(acc.date) > new Date(Date.now() - 90*24*3600000);
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div class="marker-dot ${isRecent ? 'marker-pulse' : ''}" style="width:${size}px;height:${size}px;background:${color};border:2px solid rgba(255,255,255,0.25);box-shadow:0 0 10px ${color}"></div>`,
+        iconSize: [size, size], iconAnchor: [size/2, size/2]
+      });
+      const m = L.marker([acc.lat, acc.lng], { icon }).addTo(map).on('click', () => showDetail(acc));
+      markers.push(m);
+    });
+  }
+
+  function renderSidebar(data) {
+    const list = document.getElementById('incidentsList');
+    if (!data.length) { list.innerHTML = '<div class="loading-state">No incidents found</div>'; return; }
+    list.innerHTML = data.map(acc => `
+      <div class="incident-card ${selectedId === acc.id ? 'selected' : ''}" onclick='showDetail(${JSON.stringify(acc)})'>
+        <div class="card-top">
+          <div class="card-title">${acc.title}</div>
+          <span class="severity-badge badge-${acc.severity}">${acc.severity}</span>
+        </div>
+        <div class="card-meta">
+          <span class="card-loc">📍 ${acc.location}, ${acc.country}</span>
+          <span class="card-date">${formatDate(acc.date)}</span>
+        </div>
+        ${acc.casualties > 0 || acc.injuries > 0 ? `<div class="card-casualties">
+          ${acc.casualties > 0 ? `<span class="cas-item deaths">☠ ${acc.casualties} killed</span>` : ''}
+          ${acc.injuries > 0 ? `<span class="cas-item injuries">⚕ ${acc.injuries} injured</span>` : ''}
+        </div>` : ''}
+      </div>`).join('');
+  }
+
+  function showDetail(acc) {
+    selectedId = acc.id;
+    document.getElementById('detailTitle').textContent = acc.title;
+    document.getElementById('detailBadges').innerHTML = `
+      <span class="severity-badge badge-${acc.severity}">${acc.severity}</span>
+      <span class="type-badge">${acc.type || 'incident'}</span>
+      <span class="type-badge">${formatDate(acc.date)}</span>
+      ${acc.verified ? '<span class="type-badge" style="color:var(--green);border-color:var(--green)">✓ Verified</span>' : ''}`;
+    document.getElementById('detailDesc').textContent = acc.description;
+    document.getElementById('detailStats').innerHTML = `
+      <div class="d-stat"><div class="d-stat-val red">${acc.casualties}</div><div class="d-stat-label">Fatalities</div></div>
+      <div class="d-stat"><div class="d-stat-val orange">${acc.injuries}</div><div class="d-stat-label">Injured</div></div>
+      <div class="d-stat"><div class="d-stat-val blue">${acc.country}</div><div class="d-stat-label">Country</div></div>`;
+    document.getElementById('detailFooter').innerHTML = `
+      <span class="detail-loc">📍 ${acc.location}</span>
+      ${acc.source_url ? `<a class="source-link" href="${acc.source_url}" target="_blank" rel="noopener">→ Source</a>` : ''}`;
+    document.getElementById('detailPanel').classList.add('open');
+    map.flyTo([acc.lat, acc.lng], Math.max(map.getZoom(), 6), { duration: 1.2 });
+    renderSidebar(allData);
+  }
+
+  function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('open');
+    selectedId = null;
+    renderSidebar(allData);
+  }
+
+  function setFilter(key, val) {
+    filters[key] = val;
+    document.querySelectorAll('[data-fs]').forEach(el => el.classList.toggle('active', el.dataset.fs === val));
+    loadData();
+  }
+
+  function setTypeFilter(val) {
+    filters.type = val;
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(val === '' ? 'tabAll' : val === 'derailment' ? 'tabDerail' : 'tabCollision').classList.add('active');
+    loadData();
+  }
+
+  let searchTimeout;
+  function handleSearch(val) {
+    clearTimeout(searchTimeout);
+    filters.search = val;
+    searchTimeout = setTimeout(loadData, 300);
+  }
+
+  function openModal() {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  async function submitReport() {
+    const body = {
+      title: document.getElementById('fTitle').value.trim(),
+      description: document.getElementById('fDesc').value.trim(),
+      location: document.getElementById('fLocation').value.trim(),
+      country: document.getElementById('fCountry').value.trim(),
+      lat: parseFloat(document.getElementById('fLat').value),
+      lng: parseFloat(document.getElementById('fLng').value),
+      date: document.getElementById('fDate').value,
+      severity: document.getElementById('fSeverity').value,
+      type: document.getElementById('fType').value,
+      casualties: parseInt(document.getElementById('fCasualties').value) || 0,
+      injuries: parseInt(document.getElementById('fInjuries').value) || 0,
+      source_url: document.getElementById('fSource').value.trim() || null,
+    };
+    if (!body.title || !body.description || !body.location || !body.country || isNaN(body.lat) || isNaN(body.lng) || !body.date || !body.severity) {
+      showToast('Please fill in all required fields.', 'error'); return;
+    }
+    try {
+      const res = await fetch(`${API}/accidents`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const json = await res.json();
+      if (json.success) {
+        closeModal();
+        showToast('Incident submitted!', 'success');
+        loadData(); loadStats();
+        setTimeout(() => showDetail(json.data), 500);
+      } else { showToast(json.error || 'Submission failed.', 'error'); }
+    } catch(e) { showToast('Network error.', 'error'); }
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✓ ' : '⚠ ') + msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  window.addEventListener('DOMContentLoaded', () => { initMap(); loadData(); loadStats(); });
+</script>
+</body>
+</html>
