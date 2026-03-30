@@ -10,168 +10,202 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --surface2: #17171f;
-      --border: #2a2a38;
-      --text: #e8e8f0;
-      --muted: #6b6b80;
-      --accent: #ff3b3b;
-      --accent2: #ff7a3b;
-      --yellow: #f5c518;
-      --green: #22c55e;
-      --catastrophic: #ff1a1a;
-      --severe: #ff6b35;
-      --moderate: #f59e0b;
-      --minor: #3b82f6;
+      --bg:#0a0a0f; --surface:#111118; --surface2:#17171f; --border:#2a2a38;
+      --text:#e8e8f0; --muted:#6b6b80; --accent:#ff3b3b; --green:#22c55e;
+      --catastrophic:#ff1a1a; --severe:#ff6b35; --moderate:#f59e0b; --minor:#3b82f6;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
-    header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; height: 56px;
-      background: rgba(10,10,15,0.92); backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-    .logo { display: flex; align-items: center; gap: 10px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; text-decoration: none; color: var(--text); }
-    .logo-icon { width: 30px; height: 30px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .logo span { color: var(--accent); }
-    nav { display: flex; gap: 4px; align-items: center; }
-    nav button { background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; padding: 6px 14px; border-radius: 6px; transition: all 0.2s; }
-    nav button:hover, nav button.active { color: var(--text); background: var(--surface2); }
-    .btn-report { background: var(--accent) !important; color: white !important; font-weight: 500; }
-    .btn-report:hover { background: #e02020 !important; }
+    header{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;background:rgba(10,10,15,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+    .logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:18px;text-decoration:none;color:var(--text);}
+    .logo-icon{width:30px;height:30px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+    .logo span{color:var(--accent);}
+    nav{display:flex;gap:4px;align-items:center;}
+    .nav-btn{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:6px 12px;border-radius:6px;transition:all 0.2s;white-space:nowrap;}
+    .nav-btn:hover,.nav-btn.active{color:var(--text);background:var(--surface2);}
+    .nav-btn.primary{background:var(--accent);color:white;font-weight:500;}
+    .nav-btn.primary:hover{background:#d42020;}
+    .nav-btn.ai-btn{background:#7c3aed;color:white;font-weight:500;}
+    .nav-btn.ai-btn:hover{background:#6d28d9;}
 
-    .app-layout { display: flex; height: 100vh; padding-top: 56px; }
+    .app-layout{display:flex;height:100vh;padding-top:56px;}
 
-    .sidebar { width: 340px; min-width: 340px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; z-index: 100; }
-    .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
-    .search-box { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
-    .search-box input { background: none; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; flex: 1; }
-    .search-box input::placeholder { color: var(--muted); }
-    .filters { display: flex; gap: 6px; flex-wrap: wrap; }
-    .filter-chip { padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.15s; }
-    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
-    .filter-chip.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .sidebar{width:320px;min-width:320px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:100;}
+    .sidebar-header{padding:12px;border-bottom:1px solid var(--border);}
+    .search-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px;}
+    .search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;flex:1;}
+    .search-box input::placeholder{color:var(--muted);}
+    .filters{display:flex;gap:5px;flex-wrap:wrap;}
+    .filter-chip{padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.15s;}
+    .filter-chip:hover{border-color:var(--accent);color:var(--accent);}
+    .filter-chip.active{background:var(--accent);border-color:var(--accent);color:white;}
+    .stats-bar{padding:10px 12px;display:flex;gap:8px;border-bottom:1px solid var(--border);background:var(--surface2);}
+    .stat-item{flex:1;text-align:center;}
+    .stat-val{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--accent);}
+    .stat-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;}
+    .view-tabs{display:flex;padding:8px 8px 4px;}
+    .view-tab{flex:1;padding:6px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;text-transform:uppercase;transition:all 0.15s;}
+    .view-tab:first-child{border-radius:6px 0 0 6px;}
+    .view-tab:last-child{border-radius:0 6px 6px 0;border-left:none;}
+    .view-tab.active{background:var(--accent);border-color:var(--accent);color:white;}
+    .incidents-list{flex:1;overflow-y:auto;padding:8px;}
+    .incidents-list::-webkit-scrollbar{width:3px;}
+    .incidents-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+    .incident-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:5px;cursor:pointer;transition:all 0.2s;}
+    .incident-card:hover{border-color:var(--accent);transform:translateX(2px);}
+    .incident-card.selected{border-color:var(--accent);background:rgba(255,59,59,0.06);}
+    .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;}
+    .card-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;line-height:1.3;}
+    .severity-badge{font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px;text-transform:uppercase;white-space:nowrap;}
+    .badge-catastrophic{background:rgba(255,26,26,0.2);color:var(--catastrophic);border:1px solid rgba(255,26,26,0.3);}
+    .badge-severe{background:rgba(255,107,53,0.2);color:var(--severe);border:1px solid rgba(255,107,53,0.3);}
+    .badge-moderate{background:rgba(245,158,11,0.2);color:var(--moderate);border:1px solid rgba(245,158,11,0.3);}
+    .badge-minor{background:rgba(59,130,246,0.2);color:var(--minor);border:1px solid rgba(59,130,246,0.3);}
+    .card-meta{font-size:11px;color:var(--muted);}
+    .card-casualties{display:flex;gap:8px;margin-top:5px;}
+    .cas-item{font-family:'DM Mono',monospace;font-size:10px;}
+    .cas-item.deaths{color:var(--catastrophic);}
+    .cas-item.inj{color:var(--severe);}
 
-    .stats-bar { padding: 12px 16px; display: flex; gap: 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    .stat-item { flex: 1; text-align: center; }
-    .stat-val { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent); }
-    .stat-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .map-container{flex:1;position:relative;}
+    #map{width:100%;height:100%;}
+    .map-overlay{position:absolute;top:12px;right:12px;z-index:500;}
+    .map-legend{background:rgba(10,10,15,0.92);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+    .legend-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+    .legend-item{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:11px;}
+    .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    .live-dot{display:inline-block;width:6px;height:6px;background:var(--accent);border-radius:50%;margin-right:4px;animation:blink 1.5s ease-in-out infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-    .view-tabs { display: flex; padding: 8px 8px 4px; gap: 0; }
-    .view-tab { flex: 1; padding: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; }
-    .view-tab:first-child { border-radius: 6px 0 0 6px; }
-    .view-tab:last-child { border-radius: 0 6px 6px 0; border-left: none; }
-    .view-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .detail-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(130%);width:min(480px,calc(100vw - 340px));background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:600;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 24px 64px rgba(0,0,0,0.6);}
+    .detail-panel.open{transform:translateX(-50%) translateY(0);}
+    .detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+    .detail-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;line-height:1.2;}
+    .detail-close{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:3px 8px;transition:all 0.15s;}
+    .detail-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+    .type-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);text-transform:uppercase;}
+    .detail-desc{font-size:13px;line-height:1.6;color:rgba(232,232,240,0.8);margin-bottom:12px;}
+    .detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+    .d-stat{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+    .d-stat-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+    .d-stat-val.red{color:var(--catastrophic)}.d-stat-val.orange{color:var(--severe)}.d-stat-val.blue{color:var(--minor);font-size:13px;font-weight:700;}
+    .d-stat-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+    .detail-footer{display:flex;gap:8px;align-items:center;}
+    .detail-loc{font-size:12px;color:var(--muted);flex:1;}
+    .source-link{font-size:12px;color:var(--accent);text-decoration:none;font-family:'DM Mono',monospace;}
+    .source-link:hover{text-decoration:underline;}
 
-    .incidents-list { flex: 1; overflow-y: auto; padding: 8px; }
-    .incidents-list::-webkit-scrollbar { width: 4px; }
-    .incidents-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;padding:20px;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(540px,100%);max-height:90vh;overflow-y:auto;padding:24px;}
+    .modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;}
+    .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+    .form-group{margin-bottom:14px;}
+    .form-label{display:block;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+    .form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;transition:border-color 0.2s;}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
+    .form-textarea{resize:vertical;min-height:80px;}
+    .form-select option{background:var(--surface2);}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .geo-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+    .btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all 0.2s;}
+    .btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+    .btn-ghost:hover{color:var(--text);}
+    .btn-primary{background:var(--accent);color:white;}
+    .btn-primary:hover{background:#d42020;}
+    .btn-purple{background:#7c3aed;color:white;}
+    .btn-purple:hover{background:#6d28d9;}
 
-    .incident-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
-    .incident-card:hover { border-color: var(--accent); transform: translateX(2px); }
-    .incident-card.selected { border-color: var(--accent); background: rgba(255,59,59,0.06); }
-    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-    .card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; line-height: 1.3; }
-    .severity-badge { font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    .badge-catastrophic { background: rgba(255,26,26,0.2); color: var(--catastrophic); border: 1px solid rgba(255,26,26,0.3); }
-    .badge-severe { background: rgba(255,107,53,0.2); color: var(--severe); border: 1px solid rgba(255,107,53,0.3); }
-    .badge-moderate { background: rgba(245,158,11,0.2); color: var(--moderate); border: 1px solid rgba(245,158,11,0.3); }
-    .badge-minor { background: rgba(59,130,246,0.2); color: var(--minor); border: 1px solid rgba(59,130,246,0.3); }
-    .card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .card-loc { font-size: 11px; color: var(--muted); }
-    .card-date { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
-    .card-casualties { display: flex; gap: 8px; margin-top: 6px; }
-    .cas-item { font-family: 'DM Mono', monospace; font-size: 10px; display: flex; align-items: center; gap: 3px; }
-    .cas-item.deaths { color: var(--catastrophic); }
-    .cas-item.injuries { color: var(--severe); }
+    .period-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+    .preset-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s;}
+    .preset-btn:hover{border-color:#7c3aed;color:#a78bfa;}
+    .preset-btn.active{background:#7c3aed;border-color:#7c3aed;color:white;}
+    .fetch-status{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:14px;display:none;}
+    .fetch-status.show{display:block;}
+    .fetch-log{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8;white-space:pre-line;}
+    .fetch-log .ok{color:var(--green);}
+    .fetch-log .err{color:var(--accent);}
+    .fetch-log .info{color:#a78bfa;}
 
-    .map-container { flex: 1; position: relative; }
-    #map { width: 100%; height: 100%; background: #0d0d18; }
+    /* REPORT MODAL */
+    .report-modal{width:min(920px,96vw);max-height:95vh;}
+    .report-loading{text-align:center;padding:60px 20px;}
+    .report-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:#7c3aed;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .report-content{display:none;}
+    .report-content.show{display:block;}
 
-    .map-overlay { position: absolute; top: 12px; right: 12px; z-index: 500; }
-    .map-legend { background: rgba(10,10,15,0.9); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; min-width: 150px; }
-    .legend-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
-    .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 11px; color: var(--text); }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .live-dot { display: inline-block; width: 7px; height: 7px; background: var(--accent); border-radius: 50%; margin-right: 5px; animation: blink 1.5s ease-in-out infinite; }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .r-header{border-bottom:2px solid var(--border);padding-bottom:16px;margin-bottom:20px;}
+    .r-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:8px;}
+    .r-meta{display:flex;gap:16px;flex-wrap:wrap;}
+    .r-meta-item{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+    .r-meta-item span{color:var(--text);font-weight:500;}
+    .r-section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+    .r-executive{font-size:13px;line-height:1.7;color:rgba(232,232,240,0.85);background:var(--surface2);border-left:3px solid #7c3aed;padding:12px 16px;border-radius:0 8px 8px 0;}
+    .r-headline-list{list-style:none;}
+    .r-headline-item{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(42,42,56,0.5);}
+    .r-hl-num{font-family:'Syne',sans-serif;font-weight:800;color:var(--accent);min-width:20px;font-size:13px;}
+    .r-hl-mrs{font-family:'DM Mono',monospace;font-size:9px;background:rgba(124,58,237,0.15);color:#a78bfa;border:1px solid rgba(124,58,237,0.3);padding:1px 5px;border-radius:3px;white-space:nowrap;align-self:flex-start;margin-top:2px;}
+    .r-hl-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;align-self:flex-start;margin-top:2px;}
+    .r-hl-text{font-size:12px;line-height:1.5;flex:1;}
+    .r-incident{background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;}
+    .r-incident-header{background:rgba(42,42,56,0.5);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .r-incident-ref{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+    .r-incident-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;flex:1;}
+    .r-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .r-table tr{border-bottom:1px solid rgba(42,42,56,0.8);}
+    .r-table tr:last-child{border-bottom:none;}
+    .r-table td:first-child{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;padding:9px 14px;width:140px;background:rgba(23,23,31,0.5);white-space:nowrap;vertical-align:top;}
+    .r-table td:last-child{padding:9px 14px;color:rgba(232,232,240,0.9);line-height:1.5;vertical-align:top;}
+    .r-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .r-stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+    .r-stat-box-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+    .r-stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;border-bottom:1px solid rgba(42,42,56,0.4);}
+    .r-stat-row:last-child{border-bottom:none;}
+    .r-stat-count{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);}
+    .r-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+    .r-total-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+    .r-total-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--accent);}
+    .r-total-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+    .r-closing{font-size:12px;color:var(--muted);font-style:italic;line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;}
+    .report-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border);margin-top:20px;}
 
-    .detail-panel { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%); width: min(500px, calc(100vw - 380px)); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; z-index: 600; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 24px 64px rgba(0,0,0,0.6); }
-    .detail-panel.open { transform: translateX(-50%) translateY(0); }
-    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
-    .detail-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; line-height: 1.2; }
-    .detail-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; padding: 4px 8px; font-size: 16px; transition: all 0.15s; flex-shrink: 0; }
-    .detail-close:hover { color: var(--text); }
-    .detail-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .type-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; }
-    .detail-desc { font-size: 13px; line-height: 1.6; color: rgba(232,232,240,0.8); margin-bottom: 14px; }
-    .detail-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-    .d-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
-    .d-stat-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
-    .d-stat-val.red { color: var(--catastrophic); }
-    .d-stat-val.orange { color: var(--severe); }
-    .d-stat-val.blue { color: var(--minor); font-size: 14px; font-weight: 700; }
-    .d-stat-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
-    .detail-footer { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .detail-loc { font-size: 12px; color: var(--muted); flex: 1; }
-    .source-link { font-size: 12px; color: var(--accent); text-decoration: none; font-family: 'DM Mono', monospace; }
-    .source-link:hover { text-decoration: underline; }
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;z-index:3000;transform:translateY(100px);opacity:0;transition:all 0.3s;}
+    .toast.show{transform:translateY(0);opacity:1;}
+    .toast.success{border-color:var(--green);}
+    .toast.error{border-color:var(--accent);}
+    .loading-state{display:flex;align-items:center;justify-content:center;padding:40px;flex-direction:column;gap:12px;color:var(--muted);font-size:13px;}
+    .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+    .custom-marker{border:none;background:none;}
+    .marker-dot{border-radius:50%;cursor:pointer;}
+    .marker-pulse{animation:mpulse 2s infinite;}
+    @keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+    @media(max-width:768px){.sidebar{display:none}}
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: min(560px, 95vw); max-height: 90vh; overflow-y: auto; padding: 28px; }
-    .modal-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-    .form-group { margin-bottom: 16px; }
-    .form-label { display: block; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .form-input, .form-select, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px 12px; outline: none; transition: border-color 0.2s; }
-    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
-    .form-textarea { resize: vertical; min-height: 80px; }
-    .form-select option { background: var(--surface2); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .geo-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; }
-    .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
-    .btn-ghost:hover { color: var(--text); }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: #e02020; }
-
-    .loading-state { display: flex; align-items: center; justify-content: center; padding: 40px; flex-direction: column; gap: 12px; color: var(--muted); font-size: 13px; }
-    .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .custom-marker { border: none; background: none; }
-    .marker-dot { border-radius: 50%; cursor: pointer; transition: transform 0.15s; }
-    .marker-pulse { animation: mpulse 2s infinite; }
-    @keyframes mpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 13px; z-index: 3000; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { border-color: var(--green); }
-    .toast.error { border-color: var(--accent); }
-
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .detail-panel { width: calc(100vw - 20px); left: 10px; transform: translateY(120%); bottom: 10px; }
-      .detail-panel.open { transform: translateY(0); }
+    @media print {
+      header, .sidebar, .map-container, .modal-overlay { display: none !important; }
+      .report-modal { width: 100%; max-height: none; border: none; padding: 0; }
+      .report-content { display: block !important; }
+      .report-actions { display: none; }
+      body { background: white; color: black; }
+      .r-title, .r-section-title { color: black; }
+      .r-executive { border-left-color: #7c3aed; background: #f5f5f5; color: black; }
+      .r-incident { border: 1px solid #ccc; }
+      .r-table td { color: black; }
+      .r-table td:first-child { background: #f5f5f5; color: #666; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <a class="logo" href="#">
-    <div class="logo-icon">🚂</div>
-    Rail<span>Alert</span>
-  </a>
+  <a class="logo" href="#"><div class="logo-icon">🚂</div>Rail<span>Alert</span></a>
   <nav>
-    <button class="active">Map</button>
-    <button class="btn-report" onclick="openModal()">+ Report Incident</button>
+    <button class="nav-btn ai-btn" onclick="openAIFetch()">🤖 AI Fetch Data</button>
+    <button class="nav-btn ai-btn" onclick="openReportPicker()">📄 Generate Report</button>
+    <button class="nav-btn primary" onclick="openReportIncident()">+ Report Incident</button>
   </nav>
 </header>
 
@@ -179,38 +213,34 @@
   <div class="sidebar">
     <div class="sidebar-header">
       <div class="search-box">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" id="searchInput" placeholder="Search incidents..." oninput="handleSearch(this.value)" />
       </div>
       <div class="filters">
-        <button class="filter-chip active" onclick="setFilter('severity', '')" data-fs="">All</button>
-        <button class="filter-chip" onclick="setFilter('severity', 'catastrophic')" data-fs="catastrophic">☠ Catastrophic</button>
-        <button class="filter-chip" onclick="setFilter('severity', 'severe')" data-fs="severe">⚠ Severe</button>
-        <button class="filter-chip" onclick="setFilter('severity', 'moderate')" data-fs="moderate">◈ Moderate</button>
-        <button class="filter-chip" onclick="setFilter('severity', 'minor')" data-fs="minor">◇ Minor</button>
+        <button class="filter-chip active" onclick="setFilter('severity','')" data-fs="">All</button>
+        <button class="filter-chip" onclick="setFilter('severity','catastrophic')" data-fs="catastrophic">☠ Catastrophic</button>
+        <button class="filter-chip" onclick="setFilter('severity','severe')" data-fs="severe">⚠ Severe</button>
+        <button class="filter-chip" onclick="setFilter('severity','moderate')" data-fs="moderate">◈ Moderate</button>
+        <button class="filter-chip" onclick="setFilter('severity','minor')" data-fs="minor">◇ Minor</button>
       </div>
     </div>
-
     <div class="stats-bar">
       <div class="stat-item"><div class="stat-val" id="statTotal">—</div><div class="stat-label">Incidents</div></div>
       <div class="stat-item"><div class="stat-val" id="statCas">—</div><div class="stat-label">Casualties</div></div>
       <div class="stat-item"><div class="stat-val" id="statInj">—</div><div class="stat-label">Injuries</div></div>
     </div>
-
     <div class="view-tabs">
       <button class="view-tab active" id="tabAll" onclick="setTypeFilter('')">All</button>
       <button class="view-tab" id="tabDerail" onclick="setTypeFilter('derailment')">Derailments</button>
       <button class="view-tab" id="tabCollision" onclick="setTypeFilter('collision')">Collisions</button>
     </div>
-
     <div class="incidents-list" id="incidentsList">
-      <div class="loading-state"><div class="spinner"></div><span>Loading incidents...</span></div>
+      <div class="loading-state"><div class="spinner"></div><span>Loading...</span></div>
     </div>
   </div>
 
   <div class="map-container">
     <div id="map"></div>
-
     <div class="map-overlay">
       <div class="map-legend">
         <div class="legend-title"><span class="live-dot"></span>Severity</div>
@@ -220,7 +250,6 @@
         <div class="legend-item"><div class="legend-dot" style="background:var(--minor)"></div>Minor</div>
       </div>
     </div>
-
     <div class="detail-panel" id="detailPanel">
       <div class="detail-header">
         <div class="detail-title" id="detailTitle"></div>
@@ -234,42 +263,101 @@
   </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay">
+<!-- AI FETCH MODAL -->
+<div class="modal-overlay" id="aiFetchModal">
+  <div class="modal">
+    <div class="modal-title">🤖 AI Data Fetch</div>
+    <div class="modal-sub">Claude AI searches the web for real railway accidents in your chosen period and imports them automatically.</div>
+    <div class="form-label" style="margin-bottom:8px">Quick Presets</div>
+    <div class="period-presets" id="fetchPresets">
+      <button class="preset-btn" onclick="setPreset('last2weeks',this)">Last 2 weeks</button>
+      <button class="preset-btn" onclick="setPreset('lastmonth',this)">Last month</button>
+      <button class="preset-btn" onclick="setPreset('last3months',this)">Last 3 months</button>
+      <button class="preset-btn" onclick="setPreset('2025',this)">Full 2025</button>
+      <button class="preset-btn" onclick="setPreset('2024',this)">Full 2024</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">From *</label><input class="form-input" id="aiFrom" type="date" /></div>
+      <div class="form-group"><label class="form-label">To *</label><input class="form-input" id="aiTo" type="date" /></div>
+    </div>
+    <div class="fetch-status" id="fetchStatus">
+      <div class="fetch-log" id="fetchLog"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('aiFetchModal')">Close</button>
+      <button class="btn btn-purple" id="fetchBtn" onclick="runAIFetch()">🔍 Search & Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT PERIOD PICKER -->
+<div class="modal-overlay" id="reportPickerModal">
+  <div class="modal">
+    <div class="modal-title">📄 Generate Safety Report</div>
+    <div class="modal-sub">Select the reporting period. Claude AI will produce a professional Worldwide Rail Incidents Alert.</div>
+    <div class="form-label" style="margin-bottom:8px">Quick Presets</div>
+    <div class="period-presets" id="reportPresets">
+      <button class="preset-btn" onclick="setPreset('last2weeks',this,'rep')">Last 2 weeks</button>
+      <button class="preset-btn" onclick="setPreset('lastmonth',this,'rep')">Last month</button>
+      <button class="preset-btn" onclick="setPreset('last3months',this,'rep')">Last 3 months</button>
+      <button class="preset-btn" onclick="setPreset('2025',this,'rep')">Full 2025</button>
+      <button class="preset-btn" onclick="setPreset('2024',this,'rep')">Full 2024</button>
+      <button class="preset-btn" onclick="setPreset('2025-2026',this,'rep')">2025–2026</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">From *</label><input class="form-input" id="repFrom" type="date" /></div>
+      <div class="form-group"><label class="form-label">To *</label><input class="form-input" id="repTo" type="date" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('reportPickerModal')">Cancel</button>
+      <button class="btn btn-purple" onclick="generateReport()">Generate Report →</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT VIEWER -->
+<div class="modal-overlay" id="reportViewerModal">
+  <div class="modal report-modal">
+    <div class="report-loading" id="reportLoading">
+      <div class="report-spinner"></div>
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px">Generating Report...</div>
+      <div style="font-size:13px;color:var(--muted)">Claude AI is analysing railway incidents. This may take 20–40 seconds.</div>
+    </div>
+    <div class="report-content" id="reportContent"></div>
+  </div>
+</div>
+
+<!-- REPORT INCIDENT MODAL -->
+<div class="modal-overlay" id="reportIncidentModal">
   <div class="modal">
     <div class="modal-title">Report an Incident</div>
     <div class="modal-sub">Submit a railway accident for inclusion on the map.</div>
-    <div class="form-group"><label class="form-label">Incident Title *</label><input class="form-input" id="fTitle" placeholder="e.g. XYZ Express Derailment" /></div>
+    <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="fTitle" placeholder="e.g. XYZ Express Derailment" /></div>
     <div class="form-group"><label class="form-label">Description *</label><textarea class="form-textarea" id="fDesc" placeholder="Describe what happened..."></textarea></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Location *</label><input class="form-input" id="fLocation" placeholder="City, Region" /></div>
-      <div class="form-group"><label class="form-label">Country *</label><input class="form-input" id="fCountry" placeholder="Country name" /></div>
+      <div class="form-group"><label class="form-label">Country *</label><input class="form-input" id="fCountry" placeholder="Country" /></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Latitude *</label><input class="form-input" id="fLat" type="number" step="0.0001" placeholder="e.g. 40.7128" /></div>
-      <div class="form-group"><label class="form-label">Longitude *</label><input class="form-input" id="fLng" type="number" step="0.0001" placeholder="e.g. -74.0060" /></div>
+      <div class="form-group"><label class="form-label">Latitude *</label><input class="form-input" id="fLat" type="number" step="0.0001" placeholder="40.7128" /></div>
+      <div class="form-group"><label class="form-label">Longitude *</label><input class="form-input" id="fLng" type="number" step="0.0001" placeholder="-74.0060" /></div>
     </div>
-    <div class="geo-hint">💡 Right-click any spot on Google Maps → "What's here?" to get coordinates</div>
-    <div class="form-row" style="margin-top:16px">
+    <div class="geo-hint" style="margin-bottom:12px">💡 Right-click on Google Maps → "What's here?" to get coordinates</div>
+    <div class="form-row">
       <div class="form-group"><label class="form-label">Date *</label><input class="form-input" id="fDate" type="date" /></div>
       <div class="form-group"><label class="form-label">Severity *</label>
         <select class="form-select" id="fSeverity">
-          <option value="">Select severity</option>
-          <option value="minor">Minor</option>
-          <option value="moderate">Moderate</option>
-          <option value="severe">Severe</option>
-          <option value="catastrophic">Catastrophic</option>
+          <option value="">Select...</option>
+          <option value="minor">Minor</option><option value="moderate">Moderate</option>
+          <option value="severe">Severe</option><option value="catastrophic">Catastrophic</option>
         </select>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Type</label>
         <select class="form-select" id="fType">
-          <option value="derailment">Derailment</option>
-          <option value="collision">Collision</option>
-          <option value="fire">Fire</option>
-          <option value="bridge_failure">Bridge Failure</option>
-          <option value="other">Other</option>
+          <option value="derailment">Derailment</option><option value="collision">Collision</option>
+          <option value="fire">Fire</option><option value="bridge_failure">Bridge Failure</option><option value="other">Other</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Fatalities</label><input class="form-input" id="fCasualties" type="number" min="0" placeholder="0" /></div>
@@ -279,8 +367,8 @@
       <div class="form-group"><label class="form-label">Source URL</label><input class="form-input" id="fSource" placeholder="https://..." /></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitReport()">Submit Report</button>
+      <button class="btn btn-ghost" onclick="closeModal('reportIncidentModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitIncident()">Submit</button>
     </div>
   </div>
 </div>
@@ -288,184 +376,273 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const API = '/api';
-  let map, markers = [], allData = [], selectedId = null;
-  let filters = { severity: '', type: '', search: '' };
+const API='/api';
+let map,markers=[],allData=[],selectedId=null;
+let filters={severity:'',type:'',search:''};
+const COLORS={catastrophic:'#ff1a1a',severe:'#ff6b35',moderate:'#f59e0b',minor:'#3b82f6'};
+const SIZES={catastrophic:18,severe:14,moderate:11,minor:8};
 
-  const COLORS = { catastrophic: '#ff1a1a', severe: '#ff6b35', moderate: '#f59e0b', minor: '#3b82f6' };
-  const SIZES  = { catastrophic: 18, severe: 14, moderate: 11, minor: 8 };
+function initMap(){
+  map=L.map('map',{center:[20,10],zoom:2.5,zoomControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+}
 
-  function initMap() {
-    map = L.map('map', { center: [20, 10], zoom: 2.5, zoomControl: false });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
-    }).addTo(map);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-  }
+async function loadData(){
+  try{
+    const p=new URLSearchParams();
+    if(filters.severity)p.append('severity',filters.severity);
+    if(filters.type)p.append('type',filters.type);
+    if(filters.search)p.append('search',filters.search);
+    const r=await fetch(`${API}/accidents?${p}`);
+    const j=await r.json();
+    allData=j.data||[];
+    renderSidebar(allData);renderMarkers(allData);
+  }catch(e){document.getElementById('incidentsList').innerHTML='<div class="loading-state">⚠ Cannot connect to API</div>';}
+}
 
-  async function loadData() {
-    try {
-      const params = new URLSearchParams();
-      if (filters.severity) params.append('severity', filters.severity);
-      if (filters.type) params.append('type', filters.type);
-      if (filters.search) params.append('search', filters.search);
-      const res = await fetch(`${API}/accidents?${params}`);
-      const json = await res.json();
-      allData = json.data || [];
-      renderSidebar(allData);
-      renderMarkers(allData);
-    } catch(e) {
-      document.getElementById('incidentsList').innerHTML = '<div class="loading-state">⚠ Could not load data. Check your Supabase env vars.</div>';
+async function loadStats(){
+  try{
+    const r=await fetch(`${API}/stats`);const j=await r.json();
+    document.getElementById('statTotal').textContent=j.data.totalAccidents;
+    document.getElementById('statCas').textContent=j.data.totalCasualties.toLocaleString();
+    document.getElementById('statInj').textContent=j.data.totalInjuries.toLocaleString();
+  }catch(e){}
+}
+
+function renderMarkers(data){
+  markers.forEach(m=>map.removeLayer(m));markers=[];
+  data.forEach(acc=>{
+    const color=COLORS[acc.severity]||'#888',size=SIZES[acc.severity]||10;
+    const recent=new Date(acc.date)>new Date(Date.now()-90*24*3600000);
+    const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 10px ${color}"></div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
+    markers.push(L.marker([acc.lat,acc.lng],{icon}).addTo(map).on('click',()=>showDetail(acc)));
+  });
+}
+
+function renderSidebar(data){
+  const list=document.getElementById('incidentsList');
+  if(!data.length){list.innerHTML='<div class="loading-state">No incidents found</div>';return;}
+  list.innerHTML=data.map(acc=>`
+    <div class="incident-card ${selectedId===acc.id?'selected':''}" onclick='showDetail(${JSON.stringify(acc)})'>
+      <div class="card-top"><div class="card-title">${acc.title}</div><span class="severity-badge badge-${acc.severity}">${acc.severity}</span></div>
+      <div class="card-meta">📍 ${acc.location}, ${acc.country} · <span style="font-family:'DM Mono',monospace;font-size:10px">${fmt(acc.date)}</span></div>
+      ${acc.casualties>0||acc.injuries>0?`<div class="card-casualties">${acc.casualties>0?`<span class="cas-item deaths">☠ ${acc.casualties}</span>`:''}${acc.injuries>0?`<span class="cas-item inj">⚕ ${acc.injuries}</span>`:''}</div>`:''}
+    </div>`).join('');
+}
+
+function showDetail(acc){
+  selectedId=acc.id;
+  document.getElementById('detailTitle').textContent=acc.title;
+  document.getElementById('detailBadges').innerHTML=`<span class="severity-badge badge-${acc.severity}">${acc.severity}</span><span class="type-badge">${acc.type||'incident'}</span><span class="type-badge">${fmt(acc.date)}</span>${acc.verified?'<span class="type-badge" style="color:var(--green);border-color:var(--green)">✓ Verified</span>':''}`;
+  document.getElementById('detailDesc').textContent=acc.description;
+  document.getElementById('detailStats').innerHTML=`<div class="d-stat"><div class="d-stat-val red">${acc.casualties}</div><div class="d-stat-label">Fatalities</div></div><div class="d-stat"><div class="d-stat-val orange">${acc.injuries}</div><div class="d-stat-label">Injured</div></div><div class="d-stat"><div class="d-stat-val blue">${acc.country}</div><div class="d-stat-label">Country</div></div>`;
+  document.getElementById('detailFooter').innerHTML=`<span class="detail-loc">📍 ${acc.location}</span>${acc.source_url?`<a class="source-link" href="${acc.source_url}" target="_blank" rel="noopener">→ Source</a>`:''}`;
+  document.getElementById('detailPanel').classList.add('open');
+  map.flyTo([acc.lat,acc.lng],Math.max(map.getZoom(),6),{duration:1.2});
+  renderSidebar(allData);
+}
+function closeDetail(){document.getElementById('detailPanel').classList.remove('open');selectedId=null;renderSidebar(allData);}
+
+function setFilter(k,v){
+  filters[k]=v;
+  document.querySelectorAll('[data-fs]').forEach(el=>el.classList.toggle('active',el.dataset.fs===v));
+  loadData();
+}
+function setTypeFilter(v){
+  filters.type=v;
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(v===''?'tabAll':v==='derailment'?'tabDerail':'tabCollision').classList.add('active');
+  loadData();
+}
+let st;function handleSearch(v){clearTimeout(st);filters.search=v;st=setTimeout(loadData,300);}
+
+// MODAL HELPERS
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openAIFetch(){openModal('aiFetchModal');}
+function openReportPicker(){openModal('reportPickerModal');}
+function openReportIncident(){openModal('reportIncidentModal');document.getElementById('fDate').value=new Date().toISOString().split('T')[0];}
+
+// PRESET CALCULATOR
+function calcPreset(p){
+  const now=new Date(),today=now.toISOString().split('T')[0];
+  if(p==='last2weeks'){const f=new Date(now-14*86400000);return[f.toISOString().split('T')[0],today];}
+  if(p==='lastmonth'){const f=new Date(now.getFullYear(),now.getMonth()-1,now.getDate());return[f.toISOString().split('T')[0],today];}
+  if(p==='last3months'){const f=new Date(now.getFullYear(),now.getMonth()-3,now.getDate());return[f.toISOString().split('T')[0],today];}
+  if(p==='2025')return['2025-01-01','2025-12-31'];
+  if(p==='2024')return['2024-01-01','2024-12-31'];
+  if(p==='2025-2026')return['2025-01-01',today];
+  return['',''];
+}
+
+function setPreset(p,btn,prefix='ai'){
+  const[f,t]=calcPreset(p);
+  document.getElementById(prefix+'From').value=f;
+  document.getElementById(prefix+'To').value=t;
+  btn.closest('.period-presets').querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// AI FETCH
+async function runAIFetch(){
+  const dateFrom=document.getElementById('aiFrom').value,dateTo=document.getElementById('aiTo').value;
+  if(!dateFrom||!dateTo){showToast('Please select a date range','error');return;}
+  const btn=document.getElementById('fetchBtn'),status=document.getElementById('fetchStatus'),log=document.getElementById('fetchLog');
+  btn.disabled=true;btn.textContent='⏳ Searching...';
+  status.classList.add('show');
+  log.innerHTML='<span class="info">⚡ Sending to Claude AI with web search...</span>\n';
+  try{
+    const res=await fetch(`${API}/fetch-ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dateFrom,dateTo})});
+    const j=await res.json();
+    if(!res.ok||!j.success){
+      log.innerHTML+=`<span class="err">✗ Error: ${j.error||'Unknown error'}</span>`;
+    }else{
+      log.innerHTML+=`<span class="ok">✓ AI found ${j.total} incidents\n</span>`;
+      log.innerHTML+=`<span class="ok">✓ Imported: ${j.inserted} new incidents\n</span>`;
+      if(j.skipped)log.innerHTML+=`<span class="info">↷ Skipped ${j.skipped} duplicates\n</span>`;
+      log.innerHTML+=`<span class="ok">✓ Map updated</span>`;
+      loadData();loadStats();
+      showToast(`Imported ${j.inserted} new incidents!`,'success');
     }
-  }
+  }catch(e){log.innerHTML+=`<span class="err">✗ Network error: ${e.message}</span>`;}
+  btn.disabled=false;btn.textContent='🔍 Search & Import';
+}
 
-  async function loadStats() {
-    try {
-      const res = await fetch(`${API}/stats`);
-      const json = await res.json();
-      const d = json.data;
-      document.getElementById('statTotal').textContent = d.totalAccidents;
-      document.getElementById('statCas').textContent = d.totalCasualties.toLocaleString();
-      document.getElementById('statInj').textContent = d.totalInjuries.toLocaleString();
-    } catch(e) {}
+// REPORT GENERATION
+async function generateReport(){
+  const dateFrom=document.getElementById('repFrom').value,dateTo=document.getElementById('repTo').value;
+  if(!dateFrom||!dateTo){showToast('Please select a date range','error');return;}
+  closeModal('reportPickerModal');
+  const loading=document.getElementById('reportLoading'),content=document.getElementById('reportContent');
+  loading.style.display='block';content.classList.remove('show');content.innerHTML='';
+  openModal('reportViewerModal');
+  try{
+    const res=await fetch(`${API}/generate-report`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dateFrom,dateTo})});
+    const j=await res.json();
+    loading.style.display='none';
+    if(!res.ok||!j.success){content.innerHTML=`<div style="color:var(--accent);padding:20px">Error: ${j.error||'Report generation failed'}</div>`;}
+    else{content.innerHTML=renderReport(j.report);}
+    content.classList.add('show');
+  }catch(e){
+    loading.style.display='none';
+    content.innerHTML=`<div style="color:var(--accent);padding:20px">Network error: ${e.message}</div>`;
+    content.classList.add('show');
   }
+}
 
-  function renderMarkers(data) {
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-    data.forEach(acc => {
-      const color = COLORS[acc.severity] || '#888';
-      const size = SIZES[acc.severity] || 10;
-      const isRecent = new Date(acc.date) > new Date(Date.now() - 90*24*3600000);
-      const icon = L.divIcon({
-        className: 'custom-marker',
-        html: `<div class="marker-dot ${isRecent ? 'marker-pulse' : ''}" style="width:${size}px;height:${size}px;background:${color};border:2px solid rgba(255,255,255,0.25);box-shadow:0 0 10px ${color}"></div>`,
-        iconSize: [size, size], iconAnchor: [size/2, size/2]
-      });
-      const m = L.marker([acc.lat, acc.lng], { icon }).addTo(map).on('click', () => showDetail(acc));
-      markers.push(m);
-    });
-  }
+function renderReport(r){
+  const s=r.statisticsSummary||{},sev=s.bySeverity||{};
+  const headlines=(r.headlineSummary||[]).map((h,i)=>`
+    <li class="r-headline-item">
+      <span class="r-hl-num">${h.number||i+1}</span>
+      <span class="r-hl-mrs">${h.mrs||'—'}</span>
+      <span class="r-hl-meta">${h.country||''} · ${fmt(h.date)}</span>
+      <span class="r-hl-text">${h.headline||''}</span>
+    </li>`).join('');
 
-  function renderSidebar(data) {
-    const list = document.getElementById('incidentsList');
-    if (!data.length) { list.innerHTML = '<div class="loading-state">No incidents found</div>'; return; }
-    list.innerHTML = data.map(acc => `
-      <div class="incident-card ${selectedId === acc.id ? 'selected' : ''}" onclick='showDetail(${JSON.stringify(acc)})'>
-        <div class="card-top">
-          <div class="card-title">${acc.title}</div>
-          <span class="severity-badge badge-${acc.severity}">${acc.severity}</span>
-        </div>
-        <div class="card-meta">
-          <span class="card-loc">📍 ${acc.location}, ${acc.country}</span>
-          <span class="card-date">${formatDate(acc.date)}</span>
-        </div>
-        ${acc.casualties > 0 || acc.injuries > 0 ? `<div class="card-casualties">
-          ${acc.casualties > 0 ? `<span class="cas-item deaths">☠ ${acc.casualties} killed</span>` : ''}
-          ${acc.injuries > 0 ? `<span class="cas-item injuries">⚕ ${acc.injuries} injured</span>` : ''}
-        </div>` : ''}
-      </div>`).join('');
-  }
+  const incidents=(r.incidents||[]).map((inc,i)=>`
+    <div class="r-incident">
+      <div class="r-incident-header">
+        <span class="r-incident-ref">${inc.refNumber||`RAI-${String(i+1).padStart(3,'0')}`}</span>
+        <span class="r-incident-title">${inc.title}</span>
+        <span class="severity-badge badge-${inc.severity||'moderate'}">${inc.severity||''}</span>
+      </div>
+      <table class="r-table">
+        <tr><td>Type</td><td>${inc.type||'—'}</td></tr>
+        <tr><td>Operator</td><td>${inc.operator||'Unknown'}</td></tr>
+        <tr><td>MRS Category</td><td>${inc.mrs||'—'}</td></tr>
+        <tr><td>Country / Location</td><td>${inc.country||''} — ${inc.location||''}</td></tr>
+        <tr><td>Date</td><td>${fmt(inc.date)}</td></tr>
+        <tr><td>Casualties</td><td>${inc.casualties>0?`<span style="color:var(--catastrophic);font-weight:700">${inc.casualties} fatalities</span>`:' None confirmed'}${inc.injuries>0?` · <span style="color:var(--severe)">${inc.injuries} injuries</span>`:''}</td></tr>
+        <tr><td>Description</td><td>${inc.description||'—'}</td></tr>
+        <tr><td>Known Causes</td><td>${inc.causes||'Under investigation'}</td></tr>
+        <tr><td>Safety Observations</td><td>${inc.safetyObservations||'—'}</td></tr>
+        <tr><td>Source</td><td>${inc.sourceUrl?`<a href="${inc.sourceUrl}" target="_blank" class="source-link">${inc.sourceLabel||inc.sourceUrl}</a>`:(inc.sourceLabel||'Not available')}</td></tr>
+      </table>
+    </div>`).join('');
 
-  function showDetail(acc) {
-    selectedId = acc.id;
-    document.getElementById('detailTitle').textContent = acc.title;
-    document.getElementById('detailBadges').innerHTML = `
-      <span class="severity-badge badge-${acc.severity}">${acc.severity}</span>
-      <span class="type-badge">${acc.type || 'incident'}</span>
-      <span class="type-badge">${formatDate(acc.date)}</span>
-      ${acc.verified ? '<span class="type-badge" style="color:var(--green);border-color:var(--green)">✓ Verified</span>' : ''}`;
-    document.getElementById('detailDesc').textContent = acc.description;
-    document.getElementById('detailStats').innerHTML = `
-      <div class="d-stat"><div class="d-stat-val red">${acc.casualties}</div><div class="d-stat-label">Fatalities</div></div>
-      <div class="d-stat"><div class="d-stat-val orange">${acc.injuries}</div><div class="d-stat-label">Injured</div></div>
-      <div class="d-stat"><div class="d-stat-val blue">${acc.country}</div><div class="d-stat-label">Country</div></div>`;
-    document.getElementById('detailFooter').innerHTML = `
-      <span class="detail-loc">📍 ${acc.location}</span>
-      ${acc.source_url ? `<a class="source-link" href="${acc.source_url}" target="_blank" rel="noopener">→ Source</a>` : ''}`;
-    document.getElementById('detailPanel').classList.add('open');
-    map.flyTo([acc.lat, acc.lng], Math.max(map.getZoom(), 6), { duration: 1.2 });
-    renderSidebar(allData);
-  }
+  const byMRS=(s.byMRS||[]).map(x=>`<div class="r-stat-row"><span>${x.category}</span><span class="r-stat-count">${x.count}</span></div>`).join('');
+  const byCountry=(s.byCountry||[]).slice(0,8).map(x=>`<div class="r-stat-row"><span>${x.country}</span><span class="r-stat-count">${x.count}</span></div>`).join('');
 
-  function closeDetail() {
-    document.getElementById('detailPanel').classList.remove('open');
-    selectedId = null;
-    renderSidebar(allData);
-  }
+  return `
+    <div class="r-header">
+      <div class="r-title">🚂 ${r.title||'Worldwide Rail Incidents Alert'}</div>
+      <div class="r-meta">
+        <div class="r-meta-item">Period: <span>${r.period||''}</span></div>
+        <div class="r-meta-item">Calendar Weeks: <span>${r.calendarWeeks||''}</span></div>
+        <div class="r-meta-item">Generated: <span>${fmt(r.dateGenerated)}</span></div>
+        <div class="r-meta-item">Total Incidents: <span>${r.totalIncidents||0}</span></div>
+      </div>
+    </div>
+    ${r.executiveSummary?`<div class="r-section-title">Executive Summary</div><div class="r-executive">${r.executiveSummary}</div>`:''}
+    <div class="r-section-title">1. Headline Summary</div>
+    <ul class="r-headline-list">${headlines||'<li style="color:var(--muted);font-size:13px;padding:10px 0">No incidents in this period.</li>'}</ul>
+    <div class="r-section-title">2. Statistics Overview</div>
+    <div class="r-totals">
+      <div class="r-total-box"><div class="r-total-val">${r.totalIncidents||0}</div><div class="r-total-label">Total Incidents</div></div>
+      <div class="r-total-box"><div class="r-total-val" style="color:var(--catastrophic)">${s.totalFatalities||0}</div><div class="r-total-label">Fatalities</div></div>
+      <div class="r-total-box"><div class="r-total-val" style="color:var(--severe)">${s.totalInjuries||0}</div><div class="r-total-label">Injuries</div></div>
+      <div class="r-total-box"><div class="r-total-val" style="color:var(--minor)">${(s.byCountry||[]).length}</div><div class="r-total-label">Countries</div></div>
+    </div>
+    <div class="r-stats-grid">
+      <div class="r-stat-box"><div class="r-stat-box-title">By MRS Category</div>${byMRS||'—'}</div>
+      <div class="r-stat-box"><div class="r-stat-box-title">By Severity</div>
+        <div class="r-stat-row"><span>Catastrophic</span><span class="r-stat-count" style="color:var(--catastrophic)">${sev.catastrophic||0}</span></div>
+        <div class="r-stat-row"><span>Severe</span><span class="r-stat-count" style="color:var(--severe)">${sev.severe||0}</span></div>
+        <div class="r-stat-row"><span>Moderate</span><span class="r-stat-count" style="color:var(--moderate)">${sev.moderate||0}</span></div>
+        <div class="r-stat-row"><span>Minor</span><span class="r-stat-count" style="color:var(--minor)">${sev.minor||0}</span></div>
+      </div>
+      <div class="r-stat-box" style="grid-column:1/-1"><div class="r-stat-box-title">By Country</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px">${byCountry||'—'}</div>
+      </div>
+    </div>
+    <div class="r-section-title">3. Media Gist / Incident Details</div>
+    ${incidents||'<div style="color:var(--muted);font-size:13px;padding:10px 0">No incidents found for this period.</div>'}
+    ${r.closingNote?`<div class="r-section-title">Closing Note</div><div class="r-closing">${r.closingNote}</div>`:''}
+    <div class="report-actions">
+      <button class="btn btn-ghost" onclick="closeModal('reportViewerModal')">Close</button>
+      <button class="btn btn-purple" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>`;
+}
 
-  function setFilter(key, val) {
-    filters[key] = val;
-    document.querySelectorAll('[data-fs]').forEach(el => el.classList.toggle('active', el.dataset.fs === val));
-    loadData();
-  }
+// SUBMIT INCIDENT
+async function submitIncident(){
+  const body={
+    title:document.getElementById('fTitle').value.trim(),
+    description:document.getElementById('fDesc').value.trim(),
+    location:document.getElementById('fLocation').value.trim(),
+    country:document.getElementById('fCountry').value.trim(),
+    lat:parseFloat(document.getElementById('fLat').value),
+    lng:parseFloat(document.getElementById('fLng').value),
+    date:document.getElementById('fDate').value,
+    severity:document.getElementById('fSeverity').value,
+    type:document.getElementById('fType').value,
+    casualties:parseInt(document.getElementById('fCasualties').value)||0,
+    injuries:parseInt(document.getElementById('fInjuries').value)||0,
+    source_url:document.getElementById('fSource').value.trim()||null,
+  };
+  if(!body.title||!body.description||!body.location||!body.country||isNaN(body.lat)||isNaN(body.lng)||!body.date||!body.severity){showToast('Fill in all required fields','error');return;}
+  try{
+    const res=await fetch(`${API}/accidents`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await res.json();
+    if(j.success){closeModal('reportIncidentModal');showToast('Incident submitted!','success');loadData();loadStats();setTimeout(()=>showDetail(j.data),400);}
+    else showToast(j.error||'Failed','error');
+  }catch(e){showToast('Network error','error');}
+}
 
-  function setTypeFilter(val) {
-    filters.type = val;
-    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(val === '' ? 'tabAll' : val === 'derailment' ? 'tabDerail' : 'tabCollision').classList.add('active');
-    loadData();
-  }
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=(type==='success'?'✓ ':'⚠ ')+msg;
+  t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+function fmt(d){
+  if(!d)return'—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
 
-  let searchTimeout;
-  function handleSearch(val) {
-    clearTimeout(searchTimeout);
-    filters.search = val;
-    searchTimeout = setTimeout(loadData, 300);
-  }
-
-  function openModal() {
-    document.getElementById('modalOverlay').classList.add('open');
-    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
-  }
-
-  function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('open');
-  }
-
-  async function submitReport() {
-    const body = {
-      title: document.getElementById('fTitle').value.trim(),
-      description: document.getElementById('fDesc').value.trim(),
-      location: document.getElementById('fLocation').value.trim(),
-      country: document.getElementById('fCountry').value.trim(),
-      lat: parseFloat(document.getElementById('fLat').value),
-      lng: parseFloat(document.getElementById('fLng').value),
-      date: document.getElementById('fDate').value,
-      severity: document.getElementById('fSeverity').value,
-      type: document.getElementById('fType').value,
-      casualties: parseInt(document.getElementById('fCasualties').value) || 0,
-      injuries: parseInt(document.getElementById('fInjuries').value) || 0,
-      source_url: document.getElementById('fSource').value.trim() || null,
-    };
-    if (!body.title || !body.description || !body.location || !body.country || isNaN(body.lat) || isNaN(body.lng) || !body.date || !body.severity) {
-      showToast('Please fill in all required fields.', 'error'); return;
-    }
-    try {
-      const res = await fetch(`${API}/accidents`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const json = await res.json();
-      if (json.success) {
-        closeModal();
-        showToast('Incident submitted!', 'success');
-        loadData(); loadStats();
-        setTimeout(() => showDetail(json.data), 500);
-      } else { showToast(json.error || 'Submission failed.', 'error'); }
-    } catch(e) { showToast('Network error.', 'error'); }
-  }
-
-  function showToast(msg, type = 'success') {
-    const t = document.getElementById('toast');
-    t.textContent = (type === 'success' ? '✓ ' : '⚠ ') + msg;
-    t.className = `toast ${type} show`;
-    setTimeout(() => t.classList.remove('show'), 3500);
-  }
-
-  function formatDate(d) {
-    if (!d) return '—';
-    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
-  window.addEventListener('DOMContentLoaded', () => { initMap(); loadData(); loadStats(); });
+window.addEventListener('DOMContentLoaded',()=>{initMap();loadData();loadStats();});
 </script>
 </body>
 </html>
