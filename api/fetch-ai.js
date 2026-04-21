@@ -11,8 +11,11 @@ const TAVILY_API = 'https://api.tavily.com/search';
 // Ordered list of free models to try — falls back if one is down
 const MODELS = [
   'meta-llama/llama-3.3-70b-instruct:free',
+  'qwen/qwen3-14b:free',
+  'qwen/qwen3-8b:free',
   'mistralai/mistral-7b-instruct:free',
-  'qwen/qwen3-8b:free'
+  'google/gemma-3-4b-it:free',
+  'microsoft/phi-3-mini-128k-instruct:free'
 ];
 
 const VALID_MRS = [
@@ -135,6 +138,7 @@ If none of the articles describe railway accidents, output: []`;
     // Try each model in order until one works
     let rawText = '';
     let usedModel = '';
+    const modelErrors = [];
     for (const model of MODELS) {
       try {
         const orRes = await fetch(OPENROUTER_API, {
@@ -154,24 +158,24 @@ If none of the articles describe railway accidents, output: []`;
         });
         const orData = await orRes.json();
         if (orData.error) {
-          console.log(`Model ${model} failed: ${orData.error.message}`);
+          modelErrors.push({ model, error: orData.error.message });
           continue; // try next model
         }
         const text = orData.choices?.[0]?.message?.content || '';
         if (!text) {
-          console.log(`Model ${model} returned empty response`);
+          modelErrors.push({ model, error: 'empty response' });
           continue;
         }
         rawText = text;
         usedModel = model;
         break; // success — stop trying
       } catch (e) {
-        console.log(`Model ${model} threw error: ${e.message}`);
+        modelErrors.push({ model, error: e.message });
         continue;
       }
     }
 
-    if (!rawText) return res.status(500).json({ error: 'All models failed or returned empty responses' });
+    if (!rawText) return res.status(500).json({ error: 'All models failed or returned empty responses', modelErrors: modelErrors });
 
     // Parse JSON response
     let accidents = [];
