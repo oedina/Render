@@ -8,9 +8,12 @@ const supabase = createClient(
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
 const TAVILY_API = 'https://api.tavily.com/search';
 
-// DeepSeek V3 — free, strong at structured extraction
-const MODEL = 'deepseek/deepseek-chat-v3-0324:free';
-const MODEL_FALLBACK = 'meta-llama/llama-3.3-70b-instruct:free';
+// Ordered list of free models to try — falls back if one is down
+const MODELS = [
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'mistralai/mistral-7b-instruct:free',
+  'qwen/qwen3-8b:free'
+];
 
 const VALID_MRS = [
   'Train Derailment',
@@ -129,27 +132,46 @@ ${articleSummary}
 Output ONLY a JSON array. No markdown fences, no explanation, no preamble. Start your response with [ and end with ].
 If none of the articles describe railway accidents, output: []`;
 
-    const orRes = await fetch(OPENROUTER_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openrouterKey}`,
-        'HTTP-Referer': 'https://render-rosy.vercel.app',
-        'X-Title': 'RailAlert'
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 8000,
-        temperature: 0.1,
-        messages: [{ role: 'user', content: extractPrompt }]
-      })
-    });
+    // Try each model in order until one works
+    let rawText = '';
+    let usedModel = '';
+    for (const model of MODELS) {
+      try {
+        const orRes = await fetch(OPENROUTER_API, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openrouterKey}`,
+            'HTTP-Referer': 'https://render-rosy.vercel.app',
+            'X-Title': 'RailAlert'
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 8000,
+            temperature: 0.1,
+            messages: [{ role: 'user', content: extractPrompt }]
+          })
+        });
+        const orData = await orRes.json();
+        if (orData.error) {
+          console.log(`Model ${model} failed: ${orData.error.message}`);
+          continue; // try next model
+        }
+        const text = orData.choices?.[0]?.message?.content || '';
+        if (!text) {
+          console.log(`Model ${model} returned empty response`);
+          continue;
+        }
+        rawText = text;
+        usedModel = model;
+        break; // success — stop trying
+      } catch (e) {
+        console.log(`Model ${model} threw error: ${e.message}`);
+        continue;
+      }
+    }
 
-    const orData = await orRes.json();
-    if (orData.error) return res.status(500).json({ error: orData.error.message || 'OpenRouter error' });
-
-    const rawText = orData.choices?.[0]?.message?.content || '';
-    if (!rawText) return res.status(500).json({ error: 'No response from AI' });
+    if (!rawText) return res.status(500).json({ error: 'All models failed or returned empty responses' });
 
     // Parse JSON response
     let accidents = [];
@@ -256,6 +278,7 @@ If none of the articles describe railway accidents, output: []`;
       rejected: rejectedItems.length,
       total: accidents.length,
       articlesSearched: articles.length,
+      modelUsed: usedModel,
       data: insertedRows,
       rejectedDetails: rejectedItems
     });
