@@ -690,9 +690,10 @@ async function runAIFetch(){
     if(!res.ok||!j.success){
       log.innerHTML+=`<span class="err">✗ Error: ${escHtml(j.error||'Unknown error')}</span>`;
     }else{
-      log.innerHTML+=`<span class="ok">✓ AI found ${j.total} incidents\n</span>`;
-      log.innerHTML+=`<span class="ok">✓ Imported: ${j.inserted} new incidents\n</span>`;
+      log.innerHTML+=`<span class="ok">✓ AI returned ${j.total} incidents\n</span>`;
+      if(j.rejected)log.innerHTML+=`<span class="err">✗ Rejected ${j.rejected} (failed date/accuracy checks)\n</span>`;
       if(j.skipped)log.innerHTML+=`<span class="info">↷ Skipped ${j.skipped} duplicates\n</span>`;
+      log.innerHTML+=`<span class="ok">✓ Imported: ${j.inserted} new incidents\n</span>`;
       log.innerHTML+=`<span class="ok">✓ Map updated</span>`;
       loadData();loadStats();
       showToast(`Imported ${j.inserted} new incidents!`,'success');
