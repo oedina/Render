@@ -97,14 +97,14 @@
     .map-container{flex:1;position:relative;}
     #map{width:100%;height:100%;}
     .map-overlay{position:absolute;top:12px;right:12px;z-index:500;}
-    .map-legend{background:rgba(10,10,15,0.92);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+    .map-legend{background:rgba(10,10,15,0.88);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
     .legend-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
     .legend-item{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:11px;}
     .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
     .live-dot{display:inline-block;width:6px;height:6px;background:var(--accent);border-radius:50%;margin-right:4px;animation:blink 1.5s ease-in-out infinite;}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-    .detail-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(130%);width:min(480px,calc(100vw - 340px));background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:600;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 24px 64px rgba(0,0,0,0.6);}
+    .detail-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(130%);width:min(480px,calc(100vw - 340px));background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:600;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 24px 64px rgba(0,0,0,0.7);}
     .detail-panel.open{transform:translateX(-50%) translateY(0);}
     @media(max-width:768px){
       .detail-panel{width:calc(100vw - 24px);bottom:12px;}
@@ -489,7 +489,7 @@ const incidentStore=new Map();
 
 function initMap(){
   map=L.map('map',{center:[20,10],zoom:2.5,zoomControl:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri, OpenStreetMap contributors',maxZoom:19}).addTo(map);
   L.control.zoom({position:'bottomright'}).addTo(map);
   // Clicking the map (not a marker) closes the detail panel
   map.on('click',function(){closeDetail();});
