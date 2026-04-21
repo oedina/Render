@@ -10,6 +10,7 @@ const TAVILY_API = 'https://api.tavily.com/search';
 
 // DeepSeek V3 — free, strong at structured extraction
 const MODEL = 'deepseek/deepseek-chat-v3-0324:free';
+const MODEL_FALLBACK = 'meta-llama/llama-3.3-70b-instruct:free';
 
 const VALID_MRS = [
   'Train Derailment',
@@ -90,8 +91,10 @@ export default async function handler(req, res) {
     const articles = await searchNews(dateFrom, dateTo, tavilyKey);
 
     if (!articles.length) {
-      return res.status(200).json({ success: true, inserted: 0, skipped: 0, total: 0, data: [], note: 'No articles found by Tavily' });
+      return res.status(200).json({ success: true, inserted: 0, skipped: 0, total: 0, data: [], note: 'Tavily found no articles — check TAVILY_API_KEY or try a wider date range' });
     }
+
+    console.log(`Tavily found ${articles.length} articles for ${dateFrom} to ${dateTo}`);
 
     // Build a compact summary of articles for the AI to parse
     const articleSummary = articles.map((a, i) =>
@@ -99,38 +102,32 @@ export default async function handler(req, res) {
     ).join('\n\n');
 
     // ── Step 2: DeepSeek extracts structured incident data ────────────
-    const extractPrompt = `You are a railway safety data extractor. Below are ${articles.length} news article snippets about railway incidents found between ${dateFrom} and ${dateTo}.
+    const extractPrompt = `You are a data extraction tool. I will give you news article snippets. You must read them and extract railway accident data from them. Do NOT use your training knowledge — ONLY extract information that appears in the articles below.
 
-Extract each real railway accident into a structured JSON record. Only extract genuine railway accidents — skip unrelated articles.
+Extract each railway accident mentioned in these articles into JSON format.
 
-For each incident extract:
-- title: short descriptive name with location e.g. "Odisha Train Collision, India"
-- description: 2-3 factual sentences about what happened including casualties if mentioned
-- location: specific city or region where it happened
+Fields to extract per incident:
+- title: short name with location
+- description: 2-3 sentences from the article about what happened
+- location: where it happened (city/region)
 - country: country name
-- lat: latitude as a number (your best estimate for the location)
-- lng: longitude as a number (your best estimate for the location)
-- date: date the incident OCCURRED in YYYY-MM-DD format (not the article publication date)
-- severity: minor / moderate / severe / catastrophic
-- casualties: number killed (0 if none mentioned)
-- injuries: number injured (0 if none mentioned)
-- source_url: the article URL from the list above
-- type: derailment / collision / fire / bridge_failure / other
-- mrs: best match from:
-  Train Derailment, Train Collision, Major Structural Failure or Collapse,
-  Electrocution, Fire on Railway Premises, Train Fire,
-  Platform-Train Interface Incident, Person Struck by Train,
-  Impact from Fallen Objects, Major Escalator or Lift Incident,
-  Fall from or out of Train, Environmental or Natural Disaster,
-  Crowd-Related Incident
+- lat: latitude number for the location
+- lng: longitude number for the location
+- date: date the accident happened (YYYY-MM-DD) — read this from the article text, NOT the URL
+- severity: minor, moderate, severe, or catastrophic
+- casualties: deaths mentioned (0 if none)
+- injuries: injuries mentioned (0 if none)
+- source_url: copy the URL exactly from the article header below
+- type: derailment, collision, fire, bridge_failure, or other
+- mrs: pick one from: Train Derailment, Train Collision, Major Structural Failure or Collapse, Electrocution, Fire on Railway Premises, Train Fire, Platform-Train Interface Incident, Person Struck by Train, Impact from Fallen Objects, Major Escalator or Lift Incident, Fall from or out of Train, Environmental or Natural Disaster, Crowd-Related Incident
 
-ARTICLES:
+HERE ARE THE ARTICLES TO EXTRACT FROM:
+---
 ${articleSummary}
+---
 
-Return ONLY a JSON array. No markdown, no explanation:
-[{"title":"...","description":"...","location":"...","country":"...","lat":0.0,"lng":0.0,"date":"YYYY-MM-DD","severity":"moderate","casualties":0,"injuries":0,"source_url":"...","type":"derailment","mrs":"Train Derailment"}]
-
-If no genuine railway accidents are found, return: []`;
+Output ONLY a JSON array. No markdown fences, no explanation, no preamble. Start your response with [ and end with ].
+If none of the articles describe railway accidents, output: []`;
 
     const orRes = await fetch(OPENROUTER_API, {
       method: 'POST',
@@ -163,7 +160,8 @@ If no genuine railway accidents are found, return: []`;
       if (start === -1 || end === -1) throw new Error('No JSON array found');
       accidents = JSON.parse(clean.slice(start, end + 1));
     } catch (e) {
-      return res.status(500).json({ error: 'Could not parse AI response', raw: rawText.slice(0, 1000) });
+      // Model refused or gave non-JSON — return gracefully with debug info
+      return res.status(200).json({ success: false, error: 'AI did not return structured data', raw: rawText.slice(0, 500), inserted: 0, total: 0, data: [] });
     }
 
     if (!Array.isArray(accidents) || !accidents.length) {
