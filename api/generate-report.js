@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const MODEL = 'google/gemini-2.0-flash-exp:free';
 
 function getISOWeek(dateStr) {
   const d = new Date(dateStr);

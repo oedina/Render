@@ -7,7 +7,7 @@ const supabase = createClient(
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
 // Free model — change to any free model at openrouter.ai/models?q=free
-const MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const MODEL = 'google/gemini-2.0-flash-exp:free';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
