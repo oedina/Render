@@ -568,15 +568,27 @@ async function loadStats(){
 
 function renderMarkers(data){
   markers.forEach(m=>map.removeLayer(m));markers=[];
+  let placed=0,skipped=0;
   data.forEach(acc=>{
+    const lat=parseFloat(acc.lat),lng=parseFloat(acc.lng);
+    // Skip missing, zero, or out-of-range coordinates
+    if(!isFinite(lat)||!isFinite(lng)||isNaN(lat)||isNaN(lng)){skipped++;return;}
+    if(lat===0&&lng===0){skipped++;return;}
+    if(lat<-90||lat>90||lng<-180||lng>180){skipped++;return;}
     const color=COLORS[acc.severity]||'#888',size=SIZES[acc.severity]||10;
     const recent=new Date(acc.date)>new Date(Date.now()-90*24*3600000);
     const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 10px ${color}"></div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
-    markers.push(L.marker([acc.lat,acc.lng],{icon}).addTo(map).on('click',function(e){
-      L.DomEvent.stopPropagation(e); // prevent map click from immediately closing panel
+    markers.push(L.marker([lat,lng],{icon}).addTo(map).on('click',function(e){
+      L.DomEvent.stopPropagation(e);
       showDetail(acc);
     }));
+    placed++;
   });
+  console.log(`Map markers: ${placed} placed, ${skipped} skipped (bad coordinates)`);
+  if(skipped>0){
+    const bad=data.filter(a=>{const la=parseFloat(a.lat),ln=parseFloat(a.lng);return(la===0&&ln===0)||!isFinite(la)||!isFinite(ln);});
+    console.warn('Records with bad coordinates:',bad.map(a=>({id:a.id,title:a.title,lat:a.lat,lng:a.lng})));
+  }
 }
 
 // FIX 3: Sidebar cards use data-id — no inline JSON in onclick
