@@ -5,6 +5,22 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
+const VALID_MRS = [
+  'Train Derailment',
+  'Train Collision',
+  'Major Structural Failure or Collapse',
+  'Electrocution',
+  'Fire on Railway Premises',
+  'Train Fire',
+  'Platform-Train Interface Incident',
+  'Person Struck by Train',
+  'Impact from Fallen Objects',
+  'Major Escalator or Lift Incident',
+  'Fall from or out of Train',
+  'Environmental or Natural Disaster',
+  'Crowd-Related Incident'
+];
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -13,7 +29,7 @@ export default async function handler(req, res) {
 
   // GET /api/accidents
   if (req.method === 'GET') {
-    const { severity, type, country, year, search, id } = req.query;
+    const { severity, type, mrs, country, year, search, id } = req.query;
 
     let query = supabase.from('accidents').select('*');
 
@@ -25,6 +41,7 @@ export default async function handler(req, res) {
 
     if (severity) query = query.eq('severity', severity);
     if (type) query = query.eq('type', type);
+    if (mrs) query = query.eq('mrs', mrs);
     if (country) query = query.ilike('country', `%${country}%`);
     if (year) query = query.gte('date', `${year}-01-01`).lte('date', `${year}-12-31`);
     if (search) query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`);
@@ -38,7 +55,7 @@ export default async function handler(req, res) {
 
   // POST /api/accidents
   if (req.method === 'POST') {
-    const { title, description, location, country, lat, lng, date, severity, casualties, injuries, source_url, type } = req.body;
+    const { title, description, location, country, lat, lng, date, severity, casualties, injuries, source_url, type, mrs } = req.body;
 
     if (!title || !description || !location || !country || !lat || !lng || !date || !severity) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -52,6 +69,7 @@ export default async function handler(req, res) {
       injuries: parseInt(injuries) || 0,
       source_url: source_url || null,
       type: type || 'derailment',
+      mrs: VALID_MRS.includes(mrs) ? mrs : null,
       verified: false
     }]).select().single();
 
