@@ -324,7 +324,7 @@
 <div class="modal-overlay" id="aiFetchModal" onclick="handleOverlayClick(event,'aiFetchModal')">
   <div class="modal">
     <div class="modal-title">🤖 AI Data Fetch</div>
-    <div class="modal-sub">Claude AI searches the web for real railway accidents in your chosen period and imports them automatically.</div>
+    <div class="modal-sub">AI searches for real railway accidents in your chosen period and imports them automatically.</div>
     <div class="form-label" style="margin-bottom:8px">Quick Presets</div>
     <div class="period-presets" id="fetchPresets">
       <button class="preset-btn" onclick="setPreset('last2weeks',this)">Last 2 weeks</button>
@@ -351,7 +351,7 @@
 <div class="modal-overlay" id="reportPickerModal" onclick="handleOverlayClick(event,'reportPickerModal')">
   <div class="modal">
     <div class="modal-title">📄 Generate Safety Report</div>
-    <div class="modal-sub">Select the reporting period. Claude AI will produce a professional Worldwide Rail Incidents Alert.</div>
+    <div class="modal-sub">Select the reporting period. AI will produce a professional Worldwide Rail Incidents Alert.</div>
     <div class="form-label" style="margin-bottom:8px">Quick Presets</div>
     <div class="period-presets" id="reportPresets">
       <button class="preset-btn" onclick="setPreset('last2weeks',this,'rep')">Last 2 weeks</button>
@@ -380,7 +380,7 @@
     <div class="report-loading" id="reportLoading">
       <div class="report-spinner"></div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px">Generating Report...</div>
-      <div style="font-size:13px;color:var(--muted)">Claude AI is analysing railway incidents. This may take 20–40 seconds.</div>
+      <div style="font-size:13px;color:var(--muted)">AI is analysing railway incidents. This may take 20–40 seconds.</div>
     </div>
     <div class="report-content" id="reportContent"></div>
   </div>
@@ -683,7 +683,7 @@ async function runAIFetch(){
   const btn=document.getElementById('fetchBtn'),status=document.getElementById('fetchStatus'),log=document.getElementById('fetchLog');
   btn.disabled=true;btn.textContent='⏳ Searching...';
   status.classList.add('show');
-  log.innerHTML='<span class="info">⚡ Sending to Claude AI with web search...</span>\n';
+  log.innerHTML='<span class="info">⚡ Sending to AI...</span>\n';
   try{
     const res=await fetch(`${API}/fetch-ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dateFrom,dateTo})});
     const j=await res.json();
