@@ -683,14 +683,15 @@ async function runAIFetch(){
   const btn=document.getElementById('fetchBtn'),status=document.getElementById('fetchStatus'),log=document.getElementById('fetchLog');
   btn.disabled=true;btn.textContent='⏳ Searching...';
   status.classList.add('show');
-  log.innerHTML='<span class="info">⚡ Sending to AI...</span>\n';
+  log.innerHTML='<span class="info">⚡ Step 1: Tavily searching the web for incidents...</span>\n';
   try{
     const res=await fetch(`${API}/fetch-ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dateFrom,dateTo})});
     const j=await res.json();
     if(!res.ok||!j.success){
       log.innerHTML+=`<span class="err">✗ Error: ${escHtml(j.error||'Unknown error')}</span>`;
     }else{
-      log.innerHTML+=`<span class="ok">✓ AI returned ${j.total} incidents\n</span>`;
+      log.innerHTML+=`<span class="ok">✓ Found ${j.articlesSearched||0} news articles\n</span>`;
+      log.innerHTML+=`<span class="ok">✓ AI extracted ${j.total} incidents\n</span>`;
       if(j.rejected)log.innerHTML+=`<span class="err">✗ Rejected ${j.rejected} (failed date/accuracy checks)\n</span>`;
       if(j.skipped)log.innerHTML+=`<span class="info">↷ Skipped ${j.skipped} duplicates\n</span>`;
       log.innerHTML+=`<span class="ok">✓ Imported: ${j.inserted} new incidents\n</span>`;
