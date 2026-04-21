@@ -29,9 +29,35 @@
     .nav-btn.ai-btn{background:#7c3aed;color:white;font-weight:500;}
     .nav-btn.ai-btn:hover{background:#6d28d9;}
 
+    /* FIX 1: Mobile sidebar toggle button */
+    .mobile-sidebar-toggle{display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:18px;flex-shrink:0;}
+    @media(max-width:768px){
+      .mobile-sidebar-toggle{display:flex;}
+      nav .nav-btn:not(.mobile-sidebar-toggle){display:none;}
+    }
+
     .app-layout{display:flex;height:100vh;padding-top:56px;}
 
-    .sidebar{width:320px;min-width:320px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:100;}
+    .sidebar{width:320px;min-width:320px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:100;transition:transform 0.3s ease;}
+
+    /* FIX 1 continued: Mobile sidebar as slide-over */
+    @media(max-width:768px){
+      .sidebar{
+        position:fixed;
+        top:56px;
+        left:0;
+        bottom:0;
+        width:min(320px,90vw);
+        min-width:0;
+        transform:translateX(-100%);
+        z-index:900;
+        box-shadow:4px 0 32px rgba(0,0,0,0.5);
+      }
+      .sidebar.open{transform:translateX(0);}
+      .sidebar-backdrop{display:none;position:fixed;inset:0;top:56px;background:rgba(0,0,0,0.55);z-index:899;}
+      .sidebar-backdrop.open{display:block;}
+    }
+
     .sidebar-header{padding:12px;border-bottom:1px solid var(--border);}
     .search-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px;}
     .search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;flex:1;}
@@ -80,6 +106,9 @@
 
     .detail-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(130%);width:min(480px,calc(100vw - 340px));background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:600;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 24px 64px rgba(0,0,0,0.6);}
     .detail-panel.open{transform:translateX(-50%) translateY(0);}
+    @media(max-width:768px){
+      .detail-panel{width:calc(100vw - 24px);bottom:12px;}
+    }
     .detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
     .detail-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;line-height:1.2;}
     .detail-close{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:3px 8px;transition:all 0.15s;}
@@ -96,9 +125,10 @@
     .source-link{font-size:12px;color:var(--accent);text-decoration:none;font-family:'DM Mono',monospace;}
     .source-link:hover{text-decoration:underline;}
 
+    /* FIX 4: Modal backdrop click — backdrop is a sibling, not the overlay itself */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;padding:20px;}
     .modal-overlay.open{display:flex;}
-    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(540px,100%);max-height:90vh;overflow-y:auto;padding:24px;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(540px,100%);max-height:90vh;overflow-y:auto;padding:24px;position:relative;z-index:1;}
     .modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;}
     .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
     .form-group{margin-bottom:14px;}
@@ -172,6 +202,10 @@
     .r-closing{font-size:12px;color:var(--muted);font-style:italic;line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;}
     .report-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border);margin-top:20px;}
 
+    /* Report modal close button at top */
+    .modal-close-top{position:absolute;top:16px;right:16px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:4px 10px;font-size:13px;transition:all 0.15s;z-index:2;}
+    .modal-close-top:hover{color:var(--text);border-color:var(--accent);}
+
     .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;z-index:3000;transform:translateY(100px);opacity:0;transition:all 0.3s;}
     .toast.show{transform:translateY(0);opacity:1;}
     .toast.success{border-color:var(--green);}
@@ -182,7 +216,6 @@
     .marker-dot{border-radius:50%;cursor:pointer;}
     .marker-pulse{animation:mpulse 2s infinite;}
     @keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
-    @media(max-width:768px){.sidebar{display:none}}
 
     @media print {
       header, .sidebar, .map-container, .modal-overlay { display: none !important; }
@@ -201,7 +234,11 @@
 <body>
 
 <header>
-  <a class="logo" href="#"><div class="logo-icon">🚂</div>Rail<span>Alert</span></a>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <!-- FIX 1: Mobile hamburger toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle incident list">☰</button>
+    <a class="logo" href="#"><div class="logo-icon">🚂</div>Rail<span>Alert</span></a>
+  </div>
   <nav>
     <button class="nav-btn ai-btn" onclick="openAIFetch()">🤖 AI Fetch Data</button>
     <button class="nav-btn ai-btn" onclick="openReportPicker()">📄 Generate Report</button>
@@ -209,8 +246,11 @@
   </nav>
 </header>
 
+<!-- FIX 1: Sidebar backdrop for mobile -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
 <div class="app-layout">
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="search-box">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -264,7 +304,7 @@
 </div>
 
 <!-- AI FETCH MODAL -->
-<div class="modal-overlay" id="aiFetchModal">
+<div class="modal-overlay" id="aiFetchModal" onclick="handleOverlayClick(event,'aiFetchModal')">
   <div class="modal">
     <div class="modal-title">🤖 AI Data Fetch</div>
     <div class="modal-sub">Claude AI searches the web for real railway accidents in your chosen period and imports them automatically.</div>
@@ -291,7 +331,7 @@
 </div>
 
 <!-- REPORT PERIOD PICKER -->
-<div class="modal-overlay" id="reportPickerModal">
+<div class="modal-overlay" id="reportPickerModal" onclick="handleOverlayClick(event,'reportPickerModal')">
   <div class="modal">
     <div class="modal-title">📄 Generate Safety Report</div>
     <div class="modal-sub">Select the reporting period. Claude AI will produce a professional Worldwide Rail Incidents Alert.</div>
@@ -316,8 +356,10 @@
 </div>
 
 <!-- REPORT VIEWER -->
-<div class="modal-overlay" id="reportViewerModal">
+<div class="modal-overlay" id="reportViewerModal" onclick="handleOverlayClick(event,'reportViewerModal')">
   <div class="modal report-modal">
+    <!-- FIX: Close button at top of report -->
+    <button class="modal-close-top" onclick="closeModal('reportViewerModal')">✕ Close</button>
     <div class="report-loading" id="reportLoading">
       <div class="report-spinner"></div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px">Generating Report...</div>
@@ -328,7 +370,7 @@
 </div>
 
 <!-- REPORT INCIDENT MODAL -->
-<div class="modal-overlay" id="reportIncidentModal">
+<div class="modal-overlay" id="reportIncidentModal" onclick="handleOverlayClick(event,'reportIncidentModal')">
   <div class="modal">
     <div class="modal-title">Report an Incident</div>
     <div class="modal-sub">Submit a railway accident for inclusion on the map.</div>
@@ -382,10 +424,75 @@ let filters={severity:'',type:'',search:''};
 const COLORS={catastrophic:'#ff1a1a',severe:'#ff6b35',moderate:'#f59e0b',minor:'#3b82f6'};
 const SIZES={catastrophic:18,severe:14,moderate:11,minor:8};
 
+// ─────────────────────────────────────────────
+// FIX 1: Mobile sidebar toggle
+// ─────────────────────────────────────────────
+function toggleMobileSidebar(){
+  const sidebar=document.getElementById('sidebar');
+  const backdrop=document.getElementById('sidebarBackdrop');
+  const isOpen=sidebar.classList.contains('open');
+  sidebar.classList.toggle('open',!isOpen);
+  backdrop.classList.toggle('open',!isOpen);
+}
+function closeMobileSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+// FIX 4: Modal backdrop click to dismiss
+// ─────────────────────────────────────────────
+function handleOverlayClick(event,modalId){
+  // Only close if the click landed directly on the overlay, not a child
+  if(event.target===event.currentTarget){
+    closeModal(modalId);
+  }
+}
+
+// ─────────────────────────────────────────────
+// FIX 3: Keyboard Escape closes modals & detail panel
+// ─────────────────────────────────────────────
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  // Close any open modal first
+  const openModal=document.querySelector('.modal-overlay.open');
+  if(openModal){closeModal(openModal.id);return;}
+  // Then close detail panel
+  if(document.getElementById('detailPanel').classList.contains('open')){closeDetail();return;}
+  // Then close mobile sidebar
+  closeMobileSidebar();
+});
+
+// ─────────────────────────────────────────────
+// FIX 2: Date timezone-safe formatter
+// ISO date strings like "2025-03-15" must NOT be parsed as midnight UTC,
+// otherwise users in UTC+ timezones see the previous day.
+// We parse YYYY-MM-DD manually into local date parts.
+// ─────────────────────────────────────────────
+function fmt(d){
+  if(!d)return'—';
+  // Handle both "YYYY-MM-DD" and full ISO strings
+  const dateStr=String(d).substring(0,10); // "YYYY-MM-DD"
+  const [year,month,day]=dateStr.split('-').map(Number);
+  if(!year||!month||!day)return'—';
+  // Construct in local time by using explicit parts — no UTC conversion
+  const date=new Date(year,month-1,day);
+  return date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// ─────────────────────────────────────────────
+// FIX 4 (part 2): Store incident data in a Map, not inline onclick
+// Renders sidebar cards without injecting JSON into onclick attributes (XSS risk).
+// Cards use data-id and look up the incident from the in-memory store.
+// ─────────────────────────────────────────────
+const incidentStore=new Map();
+
 function initMap(){
   map=L.map('map',{center:[20,10],zoom:2.5,zoomControl:false});
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
   L.control.zoom({position:'bottomright'}).addTo(map);
+  // Clicking the map (not a marker) closes the detail panel
+  map.on('click',function(){closeDetail();});
 }
 
 async function loadData(){
@@ -397,6 +504,9 @@ async function loadData(){
     const r=await fetch(`${API}/accidents?${p}`);
     const j=await r.json();
     allData=j.data||[];
+    // Populate the incident store for safe lookup
+    incidentStore.clear();
+    allData.forEach(acc=>incidentStore.set(String(acc.id),acc));
     renderSidebar(allData);renderMarkers(allData);
   }catch(e){document.getElementById('incidentsList').innerHTML='<div class="loading-state">⚠ Cannot connect to API</div>';}
 }
@@ -416,28 +526,63 @@ function renderMarkers(data){
     const color=COLORS[acc.severity]||'#888',size=SIZES[acc.severity]||10;
     const recent=new Date(acc.date)>new Date(Date.now()-90*24*3600000);
     const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 10px ${color}"></div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
-    markers.push(L.marker([acc.lat,acc.lng],{icon}).addTo(map).on('click',()=>showDetail(acc)));
+    markers.push(L.marker([acc.lat,acc.lng],{icon}).addTo(map).on('click',function(e){
+      L.DomEvent.stopPropagation(e); // prevent map click from immediately closing panel
+      showDetail(acc);
+    }));
   });
 }
 
+// FIX 3: Sidebar cards use data-id — no inline JSON in onclick
 function renderSidebar(data){
   const list=document.getElementById('incidentsList');
   if(!data.length){list.innerHTML='<div class="loading-state">No incidents found</div>';return;}
-  list.innerHTML=data.map(acc=>`
-    <div class="incident-card ${selectedId===acc.id?'selected':''}" onclick='showDetail(${JSON.stringify(acc)})'>
-      <div class="card-top"><div class="card-title">${acc.title}</div><span class="severity-badge badge-${acc.severity}">${acc.severity}</span></div>
-      <div class="card-meta">📍 ${acc.location}, ${acc.country} · <span style="font-family:'DM Mono',monospace;font-size:10px">${fmt(acc.date)}</span></div>
+  list.innerHTML=data.map(acc=>{
+    const title=escHtml(acc.title);
+    const loc=escHtml(acc.location);
+    const country=escHtml(acc.country);
+    return`<div class="incident-card ${selectedId===acc.id?'selected':''}" data-id="${escHtml(String(acc.id))}">
+      <div class="card-top"><div class="card-title">${title}</div><span class="severity-badge badge-${acc.severity}">${acc.severity}</span></div>
+      <div class="card-meta">📍 ${loc}, ${country} · <span style="font-family:'DM Mono',monospace;font-size:10px">${fmt(acc.date)}</span></div>
       ${acc.casualties>0||acc.injuries>0?`<div class="card-casualties">${acc.casualties>0?`<span class="cas-item deaths">☠ ${acc.casualties}</span>`:''}${acc.injuries>0?`<span class="cas-item inj">⚕ ${acc.injuries}</span>`:''}</div>`:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  // Single delegated listener — no per-card onclick
+  list.onclick=function(e){
+    const card=e.target.closest('.incident-card');
+    if(!card)return;
+    const acc=incidentStore.get(card.dataset.id);
+    if(acc){
+      showDetail(acc);
+      // On mobile, close sidebar after selecting
+      if(window.innerWidth<=768)closeMobileSidebar();
+    }
+  };
+}
+
+// Simple HTML escape to prevent XSS in rendered content
+function escHtml(str){
+  if(str==null)return'';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function showDetail(acc){
   selectedId=acc.id;
   document.getElementById('detailTitle').textContent=acc.title;
-  document.getElementById('detailBadges').innerHTML=`<span class="severity-badge badge-${acc.severity}">${acc.severity}</span><span class="type-badge">${acc.type||'incident'}</span><span class="type-badge">${fmt(acc.date)}</span>${acc.verified?'<span class="type-badge" style="color:var(--green);border-color:var(--green)">✓ Verified</span>':''}`;
-  document.getElementById('detailDesc').textContent=acc.description;
-  document.getElementById('detailStats').innerHTML=`<div class="d-stat"><div class="d-stat-val red">${acc.casualties}</div><div class="d-stat-label">Fatalities</div></div><div class="d-stat"><div class="d-stat-val orange">${acc.injuries}</div><div class="d-stat-label">Injured</div></div><div class="d-stat"><div class="d-stat-val blue">${acc.country}</div><div class="d-stat-label">Country</div></div>`;
-  document.getElementById('detailFooter').innerHTML=`<span class="detail-loc">📍 ${acc.location}</span>${acc.source_url?`<a class="source-link" href="${acc.source_url}" target="_blank" rel="noopener">→ Source</a>`:''}`;
+  document.getElementById('detailBadges').innerHTML=`<span class="severity-badge badge-${acc.severity}">${escHtml(acc.severity)}</span><span class="type-badge">${escHtml(acc.type||'incident')}</span><span class="type-badge">${fmt(acc.date)}</span>${acc.verified?'<span class="type-badge" style="color:var(--green);border-color:var(--green)">✓ Verified</span>':''}`;
+  document.getElementById('detailDesc').textContent=acc.description||'';
+  document.getElementById('detailStats').innerHTML=`<div class="d-stat"><div class="d-stat-val red">${Number(acc.casualties)||0}</div><div class="d-stat-label">Fatalities</div></div><div class="d-stat"><div class="d-stat-val orange">${Number(acc.injuries)||0}</div><div class="d-stat-label">Injured</div></div><div class="d-stat"><div class="d-stat-val blue">${escHtml(acc.country)}</div><div class="d-stat-label">Country</div></div>`;
+  const footer=document.getElementById('detailFooter');
+  footer.innerHTML=`<span class="detail-loc">📍 ${escHtml(acc.location)}</span>`;
+  if(acc.source_url){
+    const a=document.createElement('a');
+    a.className='source-link';
+    a.href=acc.source_url;
+    a.target='_blank';
+    a.rel='noopener noreferrer';
+    a.textContent='→ Source';
+    footer.appendChild(a);
+  }
   document.getElementById('detailPanel').classList.add('open');
   map.flyTo([acc.lat,acc.lng],Math.max(map.getZoom(),6),{duration:1.2});
   renderSidebar(allData);
@@ -496,7 +641,7 @@ async function runAIFetch(){
     const res=await fetch(`${API}/fetch-ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dateFrom,dateTo})});
     const j=await res.json();
     if(!res.ok||!j.success){
-      log.innerHTML+=`<span class="err">✗ Error: ${j.error||'Unknown error'}</span>`;
+      log.innerHTML+=`<span class="err">✗ Error: ${escHtml(j.error||'Unknown error')}</span>`;
     }else{
       log.innerHTML+=`<span class="ok">✓ AI found ${j.total} incidents\n</span>`;
       log.innerHTML+=`<span class="ok">✓ Imported: ${j.inserted} new incidents\n</span>`;
@@ -505,7 +650,7 @@ async function runAIFetch(){
       loadData();loadStats();
       showToast(`Imported ${j.inserted} new incidents!`,'success');
     }
-  }catch(e){log.innerHTML+=`<span class="err">✗ Network error: ${e.message}</span>`;}
+  }catch(e){log.innerHTML+=`<span class="err">✗ Network error: ${escHtml(e.message)}</span>`;}
   btn.disabled=false;btn.textContent='🔍 Search & Import';
 }
 
@@ -521,12 +666,12 @@ async function generateReport(){
     const res=await fetch(`${API}/generate-report`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dateFrom,dateTo})});
     const j=await res.json();
     loading.style.display='none';
-    if(!res.ok||!j.success){content.innerHTML=`<div style="color:var(--accent);padding:20px">Error: ${j.error||'Report generation failed'}</div>`;}
+    if(!res.ok||!j.success){content.innerHTML=`<div style="color:var(--accent);padding:20px">Error: ${escHtml(j.error||'Report generation failed')}</div>`;}
     else{content.innerHTML=renderReport(j.report);}
     content.classList.add('show');
   }catch(e){
     loading.style.display='none';
-    content.innerHTML=`<div style="color:var(--accent);padding:20px">Network error: ${e.message}</div>`;
+    content.innerHTML=`<div style="color:var(--accent);padding:20px">Network error: ${escHtml(e.message)}</div>`;
     content.classList.add('show');
   }
 }
@@ -536,46 +681,46 @@ function renderReport(r){
   const headlines=(r.headlineSummary||[]).map((h,i)=>`
     <li class="r-headline-item">
       <span class="r-hl-num">${h.number||i+1}</span>
-      <span class="r-hl-mrs">${h.mrs||'—'}</span>
-      <span class="r-hl-meta">${h.country||''} · ${fmt(h.date)}</span>
-      <span class="r-hl-text">${h.headline||''}</span>
+      <span class="r-hl-mrs">${escHtml(h.mrs||'—')}</span>
+      <span class="r-hl-meta">${escHtml(h.country||'')} · ${fmt(h.date)}</span>
+      <span class="r-hl-text">${escHtml(h.headline||'')}</span>
     </li>`).join('');
 
   const incidents=(r.incidents||[]).map((inc,i)=>`
     <div class="r-incident">
       <div class="r-incident-header">
-        <span class="r-incident-ref">${inc.refNumber||`RAI-${String(i+1).padStart(3,'0')}`}</span>
-        <span class="r-incident-title">${inc.title}</span>
-        <span class="severity-badge badge-${inc.severity||'moderate'}">${inc.severity||''}</span>
+        <span class="r-incident-ref">${escHtml(inc.refNumber||`RAI-${String(i+1).padStart(3,'0')}`)}</span>
+        <span class="r-incident-title">${escHtml(inc.title)}</span>
+        <span class="severity-badge badge-${inc.severity||'moderate'}">${escHtml(inc.severity||'')}</span>
       </div>
       <table class="r-table">
-        <tr><td>Type</td><td>${inc.type||'—'}</td></tr>
-        <tr><td>Operator</td><td>${inc.operator||'Unknown'}</td></tr>
-        <tr><td>MRS Category</td><td>${inc.mrs||'—'}</td></tr>
-        <tr><td>Country / Location</td><td>${inc.country||''} — ${inc.location||''}</td></tr>
+        <tr><td>Type</td><td>${escHtml(inc.type||'—')}</td></tr>
+        <tr><td>Operator</td><td>${escHtml(inc.operator||'Unknown')}</td></tr>
+        <tr><td>MRS Category</td><td>${escHtml(inc.mrs||'—')}</td></tr>
+        <tr><td>Country / Location</td><td>${escHtml(inc.country||'')} — ${escHtml(inc.location||'')}</td></tr>
         <tr><td>Date</td><td>${fmt(inc.date)}</td></tr>
         <tr><td>Casualties</td><td>${inc.casualties>0?`<span style="color:var(--catastrophic);font-weight:700">${inc.casualties} fatalities</span>`:' None confirmed'}${inc.injuries>0?` · <span style="color:var(--severe)">${inc.injuries} injuries</span>`:''}</td></tr>
-        <tr><td>Description</td><td>${inc.description||'—'}</td></tr>
-        <tr><td>Known Causes</td><td>${inc.causes||'Under investigation'}</td></tr>
-        <tr><td>Safety Observations</td><td>${inc.safetyObservations||'—'}</td></tr>
-        <tr><td>Source</td><td>${inc.sourceUrl?`<a href="${inc.sourceUrl}" target="_blank" class="source-link">${inc.sourceLabel||inc.sourceUrl}</a>`:(inc.sourceLabel||'Not available')}</td></tr>
+        <tr><td>Description</td><td>${escHtml(inc.description||'—')}</td></tr>
+        <tr><td>Known Causes</td><td>${escHtml(inc.causes||'Under investigation')}</td></tr>
+        <tr><td>Safety Observations</td><td>${escHtml(inc.safetyObservations||'—')}</td></tr>
+        <tr><td>Source</td><td>${inc.sourceUrl?`<a href="${escHtml(inc.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="source-link">${escHtml(inc.sourceLabel||inc.sourceUrl)}</a>`:escHtml(inc.sourceLabel||'Not available')}</td></tr>
       </table>
     </div>`).join('');
 
-  const byMRS=(s.byMRS||[]).map(x=>`<div class="r-stat-row"><span>${x.category}</span><span class="r-stat-count">${x.count}</span></div>`).join('');
-  const byCountry=(s.byCountry||[]).slice(0,8).map(x=>`<div class="r-stat-row"><span>${x.country}</span><span class="r-stat-count">${x.count}</span></div>`).join('');
+  const byMRS=(s.byMRS||[]).map(x=>`<div class="r-stat-row"><span>${escHtml(x.category)}</span><span class="r-stat-count">${x.count}</span></div>`).join('');
+  const byCountry=(s.byCountry||[]).slice(0,8).map(x=>`<div class="r-stat-row"><span>${escHtml(x.country)}</span><span class="r-stat-count">${x.count}</span></div>`).join('');
 
   return `
     <div class="r-header">
-      <div class="r-title">🚂 ${r.title||'Worldwide Rail Incidents Alert'}</div>
+      <div class="r-title">🚂 ${escHtml(r.title||'Worldwide Rail Incidents Alert')}</div>
       <div class="r-meta">
-        <div class="r-meta-item">Period: <span>${r.period||''}</span></div>
-        <div class="r-meta-item">Calendar Weeks: <span>${r.calendarWeeks||''}</span></div>
+        <div class="r-meta-item">Period: <span>${escHtml(r.period||'')}</span></div>
+        <div class="r-meta-item">Calendar Weeks: <span>${escHtml(r.calendarWeeks||'')}</span></div>
         <div class="r-meta-item">Generated: <span>${fmt(r.dateGenerated)}</span></div>
         <div class="r-meta-item">Total Incidents: <span>${r.totalIncidents||0}</span></div>
       </div>
     </div>
-    ${r.executiveSummary?`<div class="r-section-title">Executive Summary</div><div class="r-executive">${r.executiveSummary}</div>`:''}
+    ${r.executiveSummary?`<div class="r-section-title">Executive Summary</div><div class="r-executive">${escHtml(r.executiveSummary)}</div>`:''}
     <div class="r-section-title">1. Headline Summary</div>
     <ul class="r-headline-list">${headlines||'<li style="color:var(--muted);font-size:13px;padding:10px 0">No incidents in this period.</li>'}</ul>
     <div class="r-section-title">2. Statistics Overview</div>
@@ -599,7 +744,7 @@ function renderReport(r){
     </div>
     <div class="r-section-title">3. Media Gist / Incident Details</div>
     ${incidents||'<div style="color:var(--muted);font-size:13px;padding:10px 0">No incidents found for this period.</div>'}
-    ${r.closingNote?`<div class="r-section-title">Closing Note</div><div class="r-closing">${r.closingNote}</div>`:''}
+    ${r.closingNote?`<div class="r-section-title">Closing Note</div><div class="r-closing">${escHtml(r.closingNote)}</div>`:''}
     <div class="report-actions">
       <button class="btn btn-ghost" onclick="closeModal('reportViewerModal')">Close</button>
       <button class="btn btn-purple" onclick="window.print()">🖨 Print / Save PDF</button>
@@ -636,10 +781,6 @@ function showToast(msg,type='success'){
   t.textContent=(type==='success'?'✓ ':'⚠ ')+msg;
   t.className=`toast ${type} show`;
   setTimeout(()=>t.classList.remove('show'),3500);
-}
-function fmt(d){
-  if(!d)return'—';
-  return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 }
 
 window.addEventListener('DOMContentLoaded',()=>{initMap();loadData();loadStats();});
