@@ -107,7 +107,7 @@ Return a JSON array only. No markdown, no extra text. Example:
       if (start === -1 || end === -1) throw new Error('No JSON array found');
       accidents = JSON.parse(clean.slice(start, end + 1));
     } catch (e) {
-      return res.status(500).json({ error: 'Could not parse AI response', raw: rawText.slice(0, 1000) });
+      return res.status(500).json({ error: 'Could not parse AI response', raw: rawText, parseError: e.message });
     }
 
     if (!Array.isArray(accidents) || !accidents.length) {
