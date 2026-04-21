@@ -5,9 +5,9 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
+const MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 
-// Calculate ISO week number
 function getISOWeek(dateStr) {
   const d = new Date(dateStr);
   const jan4 = new Date(d.getFullYear(), 0, 4);
@@ -17,7 +17,8 @@ function getISOWeek(dateStr) {
 }
 
 function formatDate(d) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const [year, month, day] = d.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default async function handler(req, res) {
@@ -30,11 +31,10 @@ export default async function handler(req, res) {
   const { dateFrom, dateTo } = req.body;
   if (!dateFrom || !dateTo) return res.status(400).json({ error: 'dateFrom and dateTo required' });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' });
 
   try {
-    // Fetch accidents from Supabase for the period
     const { data: accidents, error } = await supabase
       .from('accidents')
       .select('*')
@@ -49,80 +49,44 @@ export default async function handler(req, res) {
     const weekRange = weekFrom === weekTo ? `CW${weekFrom}` : `CW${weekFrom}–CW${weekTo}`;
     const periodLabel = `${formatDate(dateFrom)} – ${formatDate(dateTo)}`;
 
-    // Build the prompt for Claude to generate the structured report
     const incidentsSummary = accidents.length > 0
-      ? accidents.map((a, i) => `
-Incident ${i + 1}:
-- Title: ${a.title}
-- Date: ${a.date}
-- Country: ${a.country}
-- Location: ${a.location}
-- Type: ${a.type}
-- Severity: ${a.severity}
-- Fatalities: ${a.casualties}
-- Injuries: ${a.injuries}
-- Description: ${a.description}
-- Source: ${a.source_url || 'Not available'}
-`).join('\n')
-      : 'No incidents found in the database for this period. Use your knowledge and web search to find real incidents in this date range.';
+      ? accidents.map((a, i) => `Incident ${i + 1}: ${a.title} | ${a.date} | ${a.country} | ${a.location} | ${a.type} | ${a.severity} | ${a.casualties} deaths | ${a.injuries} injuries | ${a.description} | Source: ${a.source_url || 'N/A'}`).join('\n')
+      : `No incidents in database. Use your knowledge of real railway accidents in the period ${periodLabel} to populate the report.`;
 
-    const prompt = `You are a professional railway safety analyst producing a formal "Worldwide Rail Incidents Alert" report. Generate the full report for the period ${periodLabel} (${weekRange}).
+    const prompt = `You are a professional railway safety analyst. Generate a formal "Worldwide Rail Incidents Alert" JSON report for the period ${periodLabel} (${weekRange}).
 
-${accidents.length > 0 ? `DATABASE INCIDENTS (${accidents.length} found):` : 'No DB incidents — search for real ones:'}
-${incidentsSummary}
+${accidents.length > 0 ? `DATABASE INCIDENTS (${accidents.length} total):\n${incidentsSummary}` : `No DB data — use your knowledge of real incidents:\n${incidentsSummary}`}
 
-${accidents.length === 0 ? 'Search the web for real railway accidents in this period and include them.' : ''}
+MRS categories allowed:
+Train Derailment, Train Collision, Major Structural Failure or Collapse, Electrocution, Fire on Railway Premises, Train Fire, Platform–Train Interface Incident, Person Struck by Train, Impact from Fallen Objects, Major Escalator or Lift Incident, Fall from or out of Train, Environmental or Natural Disaster, Crowd-Related Incident
 
-Generate a complete, professional report in the following EXACT JSON structure. Do not add markdown, backticks, or any text outside the JSON.
-
-The MRS categories must be one of:
-- Train Derailment
-- Train Collision
-- Major Structural Failure or Collapse
-- Electrocution
-- Fire on Railway Premises
-- Train Fire
-- Platform–Train Interface Incident
-- Person Struck by Train
-- Impact from Fallen Objects
-- Major Escalator or Lift Incident
-- Fall from or out of Train
-- Environmental or Natural Disaster
-- Crowd-Related Incident
-
-Return ONLY this JSON:
+Return ONLY this JSON object, no markdown, no backticks, no explanation:
 {
   "title": "Worldwide Rail Incidents Alert",
   "period": "${periodLabel}",
   "calendarWeeks": "${weekRange}",
   "dateGenerated": "${new Date().toISOString().split('T')[0]}",
   "totalIncidents": <number>,
-  "executiveSummary": "<2-3 sentence professional overview of the reporting period>",
+  "executiveSummary": "<2-3 sentence professional overview>",
   "headlineSummary": [
-    {
-      "number": 1,
-      "mrs": "<MRS Category>",
-      "country": "<country>",
-      "date": "<YYYY-MM-DD>",
-      "headline": "<one sentence factual description with casualties if any>"
-    }
+    {"number": 1, "mrs": "<MRS Category>", "country": "<country>", "date": "<YYYY-MM-DD>", "headline": "<one sentence factual description>"}
   ],
   "incidents": [
     {
-      "refNumber": "RAI-<YYYY>-<CW>-001",
-      "title": "<incident title>",
+      "refNumber": "RAI-${new Date().getFullYear()}-001",
+      "title": "<title>",
       "country": "<country>",
       "location": "<city/region>",
       "date": "<YYYY-MM-DD>",
-      "type": "<Accident | Incident | Near Miss>",
-      "operator": "<train operator or Unknown>",
+      "type": "<Accident|Incident|Near Miss>",
+      "operator": "<operator or Unknown>",
       "mrs": "<MRS Category>",
       "severity": "<minor|moderate|severe|catastrophic>",
       "casualties": <number>,
       "injuries": <number>,
-      "description": "<objective 3-5 sentence factual incident narrative>",
-      "causes": "<known or preliminary causes, or 'Under investigation' if not yet determined>",
-      "safetyObservations": "<safety observations, investigation focus areas, or lessons that can be drawn>",
+      "description": "<3-5 sentence factual narrative>",
+      "causes": "<known causes or Under investigation>",
+      "safetyObservations": "<safety observations or lessons>",
       "sourceUrl": "<url or null>",
       "sourceLabel": "<publication name>"
     }
@@ -134,31 +98,30 @@ Return ONLY this JSON:
     "totalFatalities": <number>,
     "totalInjuries": <number>
   },
-  "closingNote": "<1-2 sentence professional closing about the purpose of the alert and safety learning>"
+  "closingNote": "<1-2 sentence professional closing>"
 }`;
 
-    const claudeRes = await fetch(ANTHROPIC_API, {
+    const orRes = await fetch(OPENROUTER_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://render-rosy.vercel.app',
+        'X-Title': 'RailAlert'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: MODEL,
         max_tokens: 8000,
-        tools: accidents.length === 0 ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined,
+        temperature: 0.2,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
-    const claudeData = await claudeRes.json();
-    if (claudeData.error) return res.status(500).json({ error: claudeData.error.message });
+    const orData = await orRes.json();
+    if (orData.error) return res.status(500).json({ error: orData.error.message || 'OpenRouter API error' });
 
-    const textBlocks = (claudeData.content || []).filter(b => b.type === 'text');
-    if (!textBlocks.length) return res.status(500).json({ error: 'No response from AI' });
-
-    const rawText = textBlocks[textBlocks.length - 1].text;
+    const rawText = orData.choices?.[0]?.message?.content || '';
+    if (!rawText) return res.status(500).json({ error: 'No response from AI' });
 
     let report;
     try {

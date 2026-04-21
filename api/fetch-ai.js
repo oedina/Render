@@ -5,7 +5,9 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
+// Free model — change to any free model at openrouter.ai/models?q=free
+const MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,64 +19,61 @@ export default async function handler(req, res) {
   const { dateFrom, dateTo } = req.body;
   if (!dateFrom || !dateTo) return res.status(400).json({ error: 'dateFrom and dateTo required' });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' });
 
   try {
-    // Step 1: Use Claude with web search to find real accidents in the date range
-    const searchPrompt = `Search the web for real railway and train accidents that occurred between ${dateFrom} and ${dateTo} worldwide. 
+    const searchPrompt = `You are a railway safety data assistant. List real railway and train accidents that occurred between ${dateFrom} and ${dateTo} worldwide.
 
-For each accident found, extract:
+For each accident provide:
 - title (short descriptive name)
 - description (2-3 sentences about what happened)
 - location (city/region)
 - country
 - lat (latitude as number)
-- lng (longitude as number)  
+- lng (longitude as number)
 - date (YYYY-MM-DD format)
-- severity (must be exactly one of: minor, moderate, severe, catastrophic)
-  - minor: no deaths, few injuries, minimal disruption
-  - moderate: 1-5 deaths OR significant injuries/disruption
+- severity: exactly one of: minor, moderate, severe, catastrophic
+  - minor: no deaths, few injuries
+  - moderate: 1-5 deaths OR significant injuries
   - severe: 6-20 deaths OR major infrastructure damage
-  - catastrophic: 20+ deaths OR national/international significance
+  - catastrophic: 20+ deaths OR national significance
 - casualties (number of deaths, 0 if none)
 - injuries (number injured, 0 if none)
-- source_url (URL of the news article or Wikipedia page)
-- type (must be exactly one of: derailment, collision, fire, bridge_failure, other)
+- source_url (URL of a news article if you know one, otherwise null)
+- type: exactly one of: derailment, collision, fire, bridge_failure, other
 
-Find as many real incidents as you can (aim for 10-20). Only include verified real events with sources.
+Only include real verified incidents. Aim for 5-15 incidents.
 
-Respond ONLY with a valid JSON array. No markdown, no explanation, no backticks. Just the raw JSON array like:
-[{"title":"...","description":"...","location":"...","country":"...","lat":0.0,"lng":0.0,"date":"YYYY-MM-DD","severity":"moderate","casualties":0,"injuries":0,"source_url":"https://...","type":"derailment"}]`;
+Respond ONLY with a valid JSON array. No markdown, no explanation, no backticks. Example:
+[{"title":"...","description":"...","location":"...","country":"...","lat":0.0,"lng":0.0,"date":"YYYY-MM-DD","severity":"moderate","casualties":0,"injuries":0,"source_url":null,"type":"derailment"}]`;
 
-    const claudeRes = await fetch(ANTHROPIC_API, {
+    const orRes = await fetch(OPENROUTER_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://render-rosy.vercel.app',
+        'X-Title': 'RailAlert'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: MODEL,
         max_tokens: 8000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        temperature: 0.2,
         messages: [{ role: 'user', content: searchPrompt }]
       })
     });
 
-    const claudeData = await claudeRes.json();
+    const orData = await orRes.json();
 
-    if (claudeData.error) {
-      return res.status(500).json({ error: claudeData.error.message || 'Claude API error' });
+    if (orData.error) {
+      return res.status(500).json({ error: orData.error.message || 'OpenRouter API error' });
     }
 
-    // Extract the text response (last text block)
-    const textBlocks = (claudeData.content || []).filter(b => b.type === 'text');
-    if (!textBlocks.length) return res.status(500).json({ error: 'No response from AI' });
+    const rawText = orData.choices?.[0]?.message?.content || '';
+    if (!rawText) return res.status(500).json({ error: 'No response from AI' });
 
-    const rawText = textBlocks[textBlocks.length - 1].text;
-
-    // Parse JSON - strip any markdown fences just in case
+    // Parse JSON — strip any markdown fences
     let accidents = [];
     try {
       const clean = rawText.replace(/```json|```/g, '').trim();
@@ -87,18 +86,16 @@ Respond ONLY with a valid JSON array. No markdown, no explanation, no backticks.
     }
 
     if (!Array.isArray(accidents) || !accidents.length) {
-      return res.status(200).json({ success: true, inserted: 0, skipped: 0, data: [] });
+      return res.status(200).json({ success: true, inserted: 0, skipped: 0, total: 0, data: [] });
     }
 
-    // Step 2: Insert into Supabase, skipping duplicates (same title + date)
+    // Insert into Supabase, skipping duplicates
     let inserted = 0, skipped = 0;
     const insertedRows = [];
 
     for (const acc of accidents) {
-      // Validate required fields
       if (!acc.title || !acc.date || !acc.lat || !acc.lng || !acc.country) { skipped++; continue; }
 
-      // Check for duplicate (same title and date)
       const { data: existing } = await supabase
         .from('accidents')
         .select('id')
@@ -125,16 +122,10 @@ Respond ONLY with a valid JSON array. No markdown, no explanation, no backticks.
       }]).select().single();
 
       if (!error && newRow) { insertedRows.push(newRow); inserted++; }
-      else if (error) { skipped++; }
+      else { skipped++; }
     }
 
-    return res.status(200).json({
-      success: true,
-      inserted,
-      skipped,
-      total: accidents.length,
-      data: insertedRows
-    });
+    return res.status(200).json({ success: true, inserted, skipped, total: accidents.length, data: insertedRows });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
