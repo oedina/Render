@@ -6,8 +6,8 @@ const supabase = createClient(
 );
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
-// Free model — change to any free model at openrouter.ai/models?q=free
-const MODEL = 'google/gemini-2.0-flash-exp:free';
+// Auto-selects the best available free model — never goes down
+const MODEL = 'openrouter/auto';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

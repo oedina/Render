@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'google/gemini-2.0-flash-exp:free';
+const MODEL = 'openrouter/auto';
 
 function getISOWeek(dateStr) {
   const d = new Date(dateStr);
