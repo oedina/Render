@@ -553,6 +553,8 @@ async function loadData(){
     // Populate the incident store for safe lookup
     incidentStore.clear();
     allData.forEach(acc=>incidentStore.set(String(acc.id),acc));
+    // Debug: log all records with their coordinates and severity
+    console.table(allData.map(a=>({id:a.id,title:a.title.slice(0,30),severity:a.severity,lat:a.lat,lng:a.lng,latOK:a.lat!==0||a.lng!==0})));
     renderSidebar(allData);renderMarkers(allData);
   }catch(e){document.getElementById('incidentsList').innerHTML='<div class="loading-state">⚠ Cannot connect to API</div>';}
 }
