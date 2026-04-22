@@ -221,7 +221,7 @@
     .loading-state{display:flex;align-items:center;justify-content:center;padding:40px;flex-direction:column;gap:12px;color:var(--muted);font-size:13px;}
     .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
     .custom-marker{border:none;background:none;}
-    .marker-dot{border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .marker-dot{border-radius:50%;cursor:pointer;}
     .marker-pulse{animation:mpulse 2s infinite;}
     @keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 
@@ -577,10 +577,7 @@ function renderMarkers(data){
     if(lat<-90||lat>90||lng<-180||lng>180){skipped++;return;}
     const color=COLORS[acc.severity]||'#888',size=SIZES[acc.severity]||10;
     const recent=new Date(acc.date)>new Date(Date.now()-90*24*3600000);
-    const symbols={catastrophic:'✕',severe:'!',moderate:'●',minor:'●'};
-    const symbol=symbols[acc.severity]||'●';
-    const symSize=acc.severity==='catastrophic'?13:acc.severity==='severe'?11:acc.severity==='moderate'?8:6;
-    const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4),0 0 0 2px ${color};display:flex;align-items:center;justify-content:center;font-size:${symSize}px;color:white;font-weight:900;line-height:1">${symbol}</div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
+    const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 0 2px ${color}"></div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
     markers.push(L.marker([lat,lng],{icon}).addTo(map).on('click',function(e){
       L.DomEvent.stopPropagation(e);
       showDetail(acc);
