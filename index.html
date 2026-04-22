@@ -221,7 +221,7 @@
     .loading-state{display:flex;align-items:center;justify-content:center;padding:40px;flex-direction:column;gap:12px;color:var(--muted);font-size:13px;}
     .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
     .custom-marker{border:none;background:none;}
-    .marker-dot{border-radius:50%;cursor:pointer;}
+    .marker-dot{border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     .marker-pulse{animation:mpulse 2s infinite;}
     @keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 
@@ -301,10 +301,10 @@
     <div class="map-overlay">
       <div class="map-legend">
         <div class="legend-title"><span class="live-dot"></span>Severity</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--catastrophic)"></div>Catastrophic</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--severe)"></div>Severe</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--moderate)"></div>Moderate</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--minor)"></div>Minor</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dc2626;width:16px;height:16px;border:2px solid white;box-shadow:0 0 0 2px #dc2626"></div>Catastrophic</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ea580c;width:13px;height:13px;border:2px solid white;box-shadow:0 0 0 2px #ea580c"></div>Severe</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d97706;width:10px;height:10px;border:2px solid white;box-shadow:0 0 0 2px #d97706"></div>Moderate</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2563eb;width:8px;height:8px;border:2px solid white;box-shadow:0 0 0 2px #2563eb"></div>Minor</div>
       </div>
     </div>
     <div class="detail-panel" id="detailPanel">
@@ -456,8 +456,8 @@
 const API='/api';
 let map,markers=[],allData=[],selectedId=null;
 let filters={severity:'',type:'',search:''};
-const COLORS={catastrophic:'#ff1a1a',severe:'#ff6b35',moderate:'#f59e0b',minor:'#3b82f6'};
-const SIZES={catastrophic:18,severe:14,moderate:11,minor:8};
+const COLORS={catastrophic:'#dc2626',severe:'#ea580c',moderate:'#d97706',minor:'#2563eb'};
+const SIZES={catastrophic:28,severe:22,moderate:16,minor:12};
 
 // ─────────────────────────────────────────────
 // FIX 1: Mobile sidebar toggle
@@ -577,7 +577,10 @@ function renderMarkers(data){
     if(lat<-90||lat>90||lng<-180||lng>180){skipped++;return;}
     const color=COLORS[acc.severity]||'#888',size=SIZES[acc.severity]||10;
     const recent=new Date(acc.date)>new Date(Date.now()-90*24*3600000);
-    const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 10px ${color}"></div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
+    const symbols={catastrophic:'✕',severe:'!',moderate:'●',minor:'●'};
+    const symbol=symbols[acc.severity]||'●';
+    const symSize=acc.severity==='catastrophic'?13:acc.severity==='severe'?11:acc.severity==='moderate'?8:6;
+    const icon=L.divIcon({className:'custom-marker',html:`<div class="marker-dot ${recent?'marker-pulse':''}" style="width:${size}px;height:${size}px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4),0 0 0 2px ${color};display:flex;align-items:center;justify-content:center;font-size:${symSize}px;color:white;font-weight:900;line-height:1">${symbol}</div>`,iconSize:[size,size],iconAnchor:[size/2,size/2]});
     markers.push(L.marker([lat,lng],{icon}).addTo(map).on('click',function(e){
       L.DomEvent.stopPropagation(e);
       showDetail(acc);
@@ -585,6 +588,8 @@ function renderMarkers(data){
     placed++;
   });
   console.log(`Map markers: ${placed} placed, ${skipped} skipped (bad coordinates)`);
+  const severityCounts=data.reduce((a,r)=>{a[r.severity]=(a[r.severity]||0)+1;return a},{});
+  console.log('Severity breakdown in data:',severityCounts);
   if(skipped>0){
     const bad=data.filter(a=>{const la=parseFloat(a.lat),ln=parseFloat(a.lng);return(la===0&&ln===0)||!isFinite(la)||!isFinite(ln);});
     console.warn('Records with bad coordinates:',bad.map(a=>({id:a.id,title:a.title,lat:a.lat,lng:a.lng})));
