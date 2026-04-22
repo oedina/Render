@@ -34,6 +34,28 @@ const VALID_MRS = [
   'Crowd-Related Incident'
 ];
 
+// Free geocoding via Nominatim — no API key needed
+async function geocode(location, country) {
+  const query = [location, country].filter(Boolean).join(', ');
+  try {
+    await new Promise(r => setTimeout(r, 1100)); // Nominatim rate limit
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'RailAlert/1.0' } }
+    );
+    const data = await r.json();
+    if (data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    // Fallback to country only
+    const r2 = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(country)}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'RailAlert/1.0' } }
+    );
+    const data2 = await r2.json();
+    if (data2 && data2[0]) return { lat: parseFloat(data2[0].lat), lng: parseFloat(data2[0].lon) };
+  } catch (e) { console.error('Geocode failed:', e.message); }
+  return null;
+}
+
 // Search Tavily for railway accident news in the date range
 async function searchNews(dateFrom, dateTo, tavilyKey) {
   const queries = [
@@ -220,14 +242,20 @@ If none of the articles describe railway accidents, output: []`;
         rejectedItems.push({ title: acc.title, reason: 'missing title or country', date: acc.date });
         return false;
       }
-      if (acc.lat === 0 && acc.lng === 0) {
-        rejectedItems.push({ title: acc.title, reason: 'zero coordinates', date: acc.date });
-        return false;
-      }
+      // Don't reject zero coords here — we'll geocode them below
       return true;
     });
 
-    // ── Step 4: Insert into Supabase, skipping duplicates ─────────────
+    // ── Step 4: Geocode any records missing coordinates ─────────────
+    for (const acc of validAccidents) {
+      const lat = parseFloat(acc.lat), lng = parseFloat(acc.lng);
+      if (!lat || !lng || (lat === 0 && lng === 0) || !isFinite(lat) || !isFinite(lng)) {
+        const coords = await geocode(acc.location, acc.country);
+        if (coords) { acc.lat = coords.lat; acc.lng = coords.lng; }
+      }
+    }
+
+    // ── Step 5: Insert into Supabase, skipping duplicates ─────────────
     let inserted = 0, skipped = 0;
     const insertedRows = [];
 
